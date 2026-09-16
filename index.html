@@ -7,14 +7,13 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         
-        html, body { height: 100%; overflow: hidden; background-color: #f1f5f9; color: #1e293b; }
-        body { display: flex; justify-content: center; align-items: center; padding: 10px; }
+        html, body { min-height: 100vh; background-color: #f1f5f9; color: #1e293b; }
+        body { display: flex; justify-content: center; align-items: flex-start; padding: 10px; }
         
         .container { 
             width: 100%; 
             max-width: 600px; 
-            height: 100%; 
-            max-height: 100vh;
+            min-height: calc(100vh - 20px);
             background: #ffffff; 
             padding: 16px; 
             border-radius: 12px; 
@@ -42,7 +41,6 @@
 
         .timer-box { font-weight: bold; color: #ef4444; font-size: 0.95rem; }
 
-        /* 토스트 메시지 스타일 */
         .toast-msg {
             position: absolute;
             bottom: 24px;
@@ -66,15 +64,12 @@
         .card-wrapper {
             position: relative;
             flex: 1;
-            overflow: hidden;
-            border-radius: 10px;
             display: flex;
             flex-direction: column;
+            min-height: 0;
         }
 
         .card { 
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
             background: #fff; 
             border: 2px solid #e2e8f0; 
             border-radius: 10px; 
@@ -85,15 +80,10 @@
             touch-action: pan-x;
             user-select: none;
             transition: transform 0.25s ease-in-out, opacity 0.25s ease-in-out;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
             cursor: grab;
         }
         .card:active {
             cursor: grabbing;
-        }
-        .card::-webkit-scrollbar {
-            display: none;
         }
 
         .slide-out-up { transform: translateY(-100%); opacity: 0; }
@@ -105,20 +95,19 @@
         .memorized-check { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold; color: #059669; cursor: pointer; }
         .memorized-check input { width: 16px; height: 16px; accent-color: #059669; cursor: pointer; }
 
-        .q-text { font-size: 0.98rem; font-weight: 600; line-height: 1.45; color: #0f172a; margin-bottom: 10px; word-break: keep-all; }
+        .q-text { font-size: 0.95rem; font-weight: 600; line-height: 1.4; color: #0f172a; margin-bottom: 8px; word-break: keep-all; }
         
-        /* 문제 이미지 스타일 */
+        /* 모바일 최적화를 위해 이미지 최대 높이 축소 */
         .q-img {
             max-width: 100%;
-            max-height: 220px;
+            max-height: 140px;
             object-fit: contain;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
-            margin: 0 auto 12px auto;
+            margin: 0 auto 10px auto;
             display: block;
         }
 
-        /* 노란색 형광펜 하이라이팅 효과 */
         .kw-highlight { 
             background: #fef08a; 
             color: #854d0e; 
@@ -130,13 +119,12 @@
 
         .memorize-options-list { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
         
-        /* 암기장 보기 - 기본(오답) 스타일 */
         .mem-opt-item { 
-            padding: 8px 12px; 
+            padding: 8px 10px; 
             border: 1px solid #e2e8f0; 
             background: #f8fafc; 
             border-radius: 8px; 
-            font-size: 0.88rem; 
+            font-size: 0.85rem; 
             font-weight: 400; 
             line-height: 1.35; 
             word-break: keep-all; 
@@ -145,7 +133,6 @@
             transition: all 0.15s ease;
         }
 
-        /* 암기장 보기 - 정답 스타일 */
         .mem-opt-item.is-answer { 
             background-color: #dcfce7 !important; 
             border: 1.5px solid #22c55e !important; 
@@ -242,7 +229,7 @@
                 </div>
             </div>
             
-            <div id="quizContent" style="display:none; flex-direction: column; height:100%;">
+            <div id="quizContent" style="display:none; flex-direction: column;">
                 <div class="q-header" id="qHeader">
                     <span style="font-size:0.8rem; font-weight:bold; color:#64748b;" id="qCategory">문제</span>
                     <label class="memorized-check">
@@ -252,7 +239,6 @@
                 </div>
 
                 <div class="q-text" id="qText"></div>
-                <!-- 문제 이미지 표시 영역 -->
                 <img id="qImage" class="q-img" src="" alt="문제 이미지" style="display: none;">
 
                 <div class="options-list" id="optList" style="display:none;"></div>
@@ -300,7 +286,6 @@
 
     const cardBox = document.getElementById('cardBox');
 
-    // 자동 데이터 로드 실행
     window.addEventListener('DOMContentLoaded', () => {
         loadJsonData();
     });
@@ -571,7 +556,7 @@
             '2가지', '두 가지', '두가지', '3가지', 
             '틀린 것은', '틀린것은', 
             '가장 적절하지 않은', '적절하지 않은', '아닌 것은', '아닌것은', '올바르지 않은', 
-            '불가능한', '가장 큰 이유', '과태료', '벌점', '우선순위', '안전거리', '옳지 않은', '바르지 않는'
+            '불가능한', '가장 큰 이유', '과태료', '벌점', '우선순위', '안전거리', '옳지 않은', '바르지 않은'
         ];
 
         keywords.forEach(kw => {
@@ -607,7 +592,6 @@
         document.getElementById('itemMemorizedCheck').checked = memorizedSet.has(item._id);
         document.getElementById('qText').innerHTML = highlightKeywords(item.question);
 
-        // 이미지 속성 대응 (image_url, image, img 키 지원)
         const imgUrl = item.image_url || item.image || item.img || null;
         const qImageEl = document.getElementById('qImage');
         if (imgUrl) {
