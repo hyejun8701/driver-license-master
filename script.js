@@ -24,28 +24,31 @@ const cardBox = document.getElementById('cardBox');
 window.addEventListener('DOMContentLoaded', () => {
     loadJsonData();
 
-    const qInputEl = document.getElementById('qInput');
-    if (qInputEl) {
-        let originalVal = '';
+    // 입력창(문제 번호, 범위 시작/끝) 편의 기능 설정 (터치 시 비워지고, 포커스 아웃 시 빈칸이면 원복)
+    ['qInput', 'rangeStart', 'rangeEnd'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            let originalVal = '';
 
-        qInputEl.addEventListener('keydown', e => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                jumpToQ();
-            }
-        });
+            el.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (id === 'qInput') jumpToQ();
+                }
+            });
 
-        qInputEl.addEventListener('focus', () => {
-            originalVal = qInputEl.value; 
-            qInputEl.value = ''; 
-        });
+            el.addEventListener('focus', () => {
+                originalVal = el.value; 
+                el.value = ''; 
+            });
 
-        qInputEl.addEventListener('blur', () => {
-            if (qInputEl.value.trim() === '') {
-                qInputEl.value = originalVal;
-            }
-        });
-    }
+            el.addEventListener('blur', () => {
+                if (el.value.trim() === '') {
+                    el.value = originalVal;
+                }
+            });
+        }
+    });
 });
 
 
@@ -296,7 +299,7 @@ function switchMode(mode) {
         }
     } else {
         navLeft.style.display = 'none';
-        totalIdxEl.style.display = 'none'; // 모의고사 준비 화면에서는 0/0 숨기기
+        totalIdxEl.style.display = 'none'; 
         resetExamSetup();
     }
 }
@@ -523,7 +526,6 @@ function startNewExam() {
     timeLeft = 2400;
     isExamStarted = true;
 
-    // 시험 시작 시 안내 숨기고 카드 보이기, 0/0 카운터 다시 보이기
     document.getElementById('examBeforeStart').style.display = 'none';
     document.getElementById('cardBox').style.display = 'flex';
     document.getElementById('totalIdx').style.display = 'inline';
@@ -543,7 +545,6 @@ function resetExamSetup() {
     clearInterval(timerInterval);
     userAnswers = {};
     
-    // 모의고사 준비 상태로 복귀 (큰 카드 및 0/0 카운터 숨기기)
     document.getElementById('examBeforeStart').style.display = 'flex';
     document.getElementById('cardBox').style.display = 'none';
     document.getElementById('totalIdx').style.display = 'none';

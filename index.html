@@ -45,11 +45,11 @@
                 </div>
             </div>
 
-            <!-- 2행: 범위 설정 (모바일 가로 짤림 방지를 위해 독립 행 분리) -->
+            <!-- 2행: 범위 설정 (필터/문항과 폭과 라인업을 맞춤) -->
             <div class="exam-setup-row">
-                <div class="setup-item range-item" style="width: 100%; justify-content: space-between;">
+                <div class="setup-item" style="width: 100%;">
                     <span class="setup-label">범위</span>
-                    <div style="display: flex; align-items: center; gap: 4px; flex: 1; justify-content: flex-end;">
+                    <div class="range-input-container">
                         <input type="number" id="rangeStart" min="1" value="1"> 
                         <span class="range-tilde">~</span> 
                         <input type="number" id="rangeEnd" min="1" value="100">

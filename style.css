@@ -186,7 +186,7 @@ h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
 .fail { color: #dc2626; }
 .restart-btn { padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.9rem; cursor: pointer; margin-top: 8px; }
 
-/* 모의고사 설정 영역 스타일 (모바일 레이아웃 최적화) */
+/* 모의고사 설정 영역 스타일 (정렬 및 간격 통일) */
 .exam-setup-group {
     display: flex;
     flex-direction: column;
@@ -210,19 +210,16 @@ h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
 .setup-item {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     font-size: 0.8rem;
     color: #334155;
-}
-
-.setup-item.range-item {
-    flex-shrink: 0;
 }
 
 .setup-label {
     font-weight: 600;
     color: #475569;
     white-space: nowrap;
+    width: 32px; /* 라벨 너비를 고정하여 인풋 상자의 시작 위치를 완벽히 일치시킴 */
 }
 
 .exam-setup-group select,
@@ -238,8 +235,20 @@ h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
 }
 
 .exam-setup-group input[type="number"] {
-    width: 65px; /* 네 자리 숫자(1000)가 잘리지 않도록 크기 확보 */
     text-align: center;
+}
+
+/* 범위 입력 컨테이너 (필터/문항 셀렉트 박스와 동일한 폭을 차지하도록 설정) */
+.range-input-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+}
+
+.range-input-container input {
+    flex: 1;
+    width: 100%;
 }
 
 .range-tilde {
