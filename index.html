@@ -238,10 +238,8 @@
         <div class="card" id="cardBox">
             <div id="loading">
                 <div style="font-weight: bold; color: #2563eb; line-height: 1.4; font-size: 0.95rem;">
-                    📂 아래 버튼을 눌러<br><strong>questions_full.json</strong> 파일을 선택해 주세요.
+                    🔄 문제 데이터를 불러오는 중입니다...
                 </div>
-                <button class="file-select-btn" onclick="triggerFileInput()">📁 파일 선택</button>
-                <input type="file" id="jsonFileInput" accept=".json" onchange="handleFileUpload(event)" style="display: none;">
             </div>
             
             <div id="quizContent" style="display:none; flex-direction: column; height:100%;">
@@ -301,6 +299,34 @@
     let isMouseDown = false;
 
     const cardBox = document.getElementById('cardBox');
+
+    // 자동 데이터 로드 실행
+    window.addEventListener('DOMContentLoaded', () => {
+        loadJsonData();
+    });
+
+    function loadJsonData() {
+        fetch('./questions_full.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답이 올바르지 않습니다.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                initQuiz(data);
+            })
+            .catch(error => {
+                console.error('JSON 파일 로드 실패:', error);
+                document.getElementById('loading').innerHTML = `
+                    <div style="font-weight: bold; color: #ef4444; line-height: 1.4; font-size: 0.95rem;">
+                        ⚠️ questions_full.json 데이터를 불러오지 못했습니다.<br>수동으로 선택해 주세요.
+                    </div>
+                    <button class="file-select-btn" onclick="triggerFileInput()">📁 파일 선택</button>
+                    <input type="file" id="jsonFileInput" accept=".json" onchange="handleFileUpload(event)" style="display: none;">
+                `;
+            });
+    }
 
     cardBox.addEventListener('touchstart', e => {
         dragStartY = e.changedTouches[0].screenY;
