@@ -33,29 +33,35 @@
         </div>
 
         <div id="examStartBox" class="exam-setup-group" style="display:none;">
-            <!-- 1행: 필터 및 범위 설정 -->
+            <!-- 1행: 필터 설정 -->
             <div class="exam-setup-row">
-                <div class="setup-item">
+                <div class="setup-item" style="width: 100%;">
                     <span class="setup-label">필터</span>
-                    <select id="examFilterSelect" class="custom-select">
+                    <select id="examFilterSelect" class="custom-select" style="flex: 1;">
                         <option value="all" selected>전체 문제</option>
                         <option value="unmemorized">미완료 문제만</option>
                         <option value="memorized">⭐ 외운 문제만</option>
                     </select>
                 </div>
-                <div class="setup-item range-item">
+            </div>
+
+            <!-- 2행: 범위 설정 (모바일 가로 짤림 방지를 위해 독립 행 분리) -->
+            <div class="exam-setup-row">
+                <div class="setup-item range-item" style="width: 100%; justify-content: space-between;">
                     <span class="setup-label">범위</span>
-                    <input type="number" id="rangeStart" min="1" value="1"> 
-                    <span class="range-tilde">~</span> 
-                    <input type="number" id="rangeEnd" min="1" value="100">
+                    <div style="display: flex; align-items: center; gap: 4px; flex: 1; justify-content: flex-end;">
+                        <input type="number" id="rangeStart" min="1" value="1"> 
+                        <span class="range-tilde">~</span> 
+                        <input type="number" id="rangeEnd" min="1" value="100">
+                    </div>
                 </div>
             </div>
 
-            <!-- 2행: 문항 수 선택 및 시작 버튼 -->
+            <!-- 3행: 문항 수 선택 및 시작 버튼 -->
             <div class="exam-setup-row">
-                <div class="setup-item">
+                <div class="setup-item" style="flex: 1;">
                     <span class="setup-label">문항</span>
-                    <select id="examCountSelect" class="custom-select">
+                    <select id="examCountSelect" class="custom-select" style="flex: 1;">
                         <option value="5" selected>5문제</option>
                         <option value="10">10문제</option>
                         <option value="20">20문제</option>

@@ -227,7 +227,7 @@ h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
 
 .exam-setup-group select,
 .exam-setup-group input[type="number"] {
-    padding: 4px 4px;
+    padding: 5px 6px;
     font-size: 0.8rem;
     border: 1px solid #cbd5e1;
     border-radius: 6px;
@@ -238,7 +238,7 @@ h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
 }
 
 .exam-setup-group input[type="number"] {
-    width: 50px;
+    width: 65px; /* 네 자리 숫자(1000)가 잘리지 않도록 크기 확보 */
     text-align: center;
 }
 
