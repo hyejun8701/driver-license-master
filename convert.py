@@ -5,11 +5,12 @@ import re
 import pdfplumber
 
 
-def extract_full_quiz(pdf_path, output_json_path, image_output_dir="extracted_images"):
+def extract_full_quiz(pdf_path, output_json_path, image_output_dir="extracted_images", extract_images=True):
     questions = []
-    print("PDF 데이터 및 이미지/상황 설명 문구 추출 시작...")
+    print(f"PDF 데이터 추출 시작 (이미지 추출 모드: {extract_images})...")
 
-    os.makedirs(image_output_dir, exist_ok=True)
+    if extract_images:
+        os.makedirs(image_output_dir, exist_ok=True)
 
     symbol_map = {
         '①': 1, '②': 2, '③': 3, '④': 4, '⑤': 5,
@@ -43,7 +44,7 @@ def extract_full_quiz(pdf_path, output_json_path, image_output_dir="extracted_im
                 block = page_text[start_pos:end_pos]
                 q_num = int(q_matches[idx].group(1))
 
-                # 문제 번호 Y0 (top) 좌표 구하기
+                # 문제 번호 Y (top) 좌표 구하기
                 q_top = 0
                 for w in words:
                     clean_w = w["text"].strip()
@@ -60,9 +61,11 @@ def extract_full_quiz(pdf_path, output_json_path, image_output_dir="extracted_im
             # 문제 Y좌표 순 정렬
             q_blocks.sort(key=lambda x: x["q_top"])
 
-            # 40px 이상의 문제용 주요 이미지 추출 및 Y좌표 정렬
-            page_images = [img for img in page.images if img["width"] > 40 and img["height"] > 40]
-            page_images.sort(key=lambda x: x["top"])
+            # 이미지 추출 플래그가 켜져 있을 때만 페이지 이미지 준비
+            page_images = []
+            if extract_images:
+                page_images = [img for img in page.images if img["width"] > 40 and img["height"] > 40]
+                page_images.sort(key=lambda x: x["top"])
 
             for idx, q_info in enumerate(q_blocks):
                 q_num = q_info["q_num"]
@@ -92,19 +95,19 @@ def extract_full_quiz(pdf_path, output_json_path, image_output_dir="extracted_im
 
                 # 2. 정답/해설 영역과 문제 영역 분리
                 split_ans = re.split(r"■\s*정답|■\s*해설|\[정답\]", block)
-                question_and_context = split_ans[0]  # 정답 나오기 전 전체 영역 (지문 + 보기 + 이미지설명문구)
+                question_and_context = split_ans[0]  # 정답 나오기 전 전체 영역
 
                 # 3. 보기(①~⑤) 추출
                 split_parts = re.split(f"({opt_symbols})", question_and_context)
 
                 options = []
-                q_title = split_parts[0]  # 문제 제목 (예: 681. 다음 상황에서...)
+                q_title = split_parts[0]  # 문제 제목 및 지문
                 extra_context = ""        # 보기 뒤, 정답 전에 있는 상황 설명 문구 (■ ...)
 
                 for i in range(1, len(split_parts), 2):
                     sym = split_parts[i]
                     txt = split_parts[i + 1] if i + 1 < len(split_parts) else ""
-                    
+
                     # 마지막 보기 뒤에 붙은 설명 문구 분리
                     if i + 2 >= len(split_parts):
                         ctx_split = re.split(r"(■\s*[^정답\n].*)", txt, flags=re.DOTALL)
@@ -117,20 +120,22 @@ def extract_full_quiz(pdf_path, output_json_path, image_output_dir="extracted_im
                     clean_txt = re.sub(r"\s+", " ", opt_txt).strip()
                     options.append(f"{sym} {clean_txt}")
 
-                # 문제 지문 정리
+                # 문제 지문 정리 (기본 지문)
                 q_text = re.sub(r"^\s*\d+\s*\.\s*", "", q_title).strip()
                 q_text = re.sub(r"\s+", " ", q_text)
 
-                # 상황 설명 문구(■ ...)가 존재하면 문제 지문 뒤에 줄바꿈으로 추가
+                # 상황 설명 문구(■ ...)를 문제 지문에서 제외하고 별도 필드로 분리
+                image_description = ""
                 if extra_context:
                     clean_ctx = extra_context.strip()
-                    # 다중 줄바꿈 정리
-                    clean_ctx = re.sub(r"\n\s*", "\n", clean_ctx)
-                    q_text = f"{q_text}\n\n{clean_ctx}"
+                    image_description = re.sub(r"\n\s*", " ", clean_ctx) # 줄바꿈을 공백 또는 보기 좋게 정리
 
-                # 4. 이미지 추출 (681 ~ 965번)
+                # 4. 이미지 추출 (플래그가 True이고 지정된 번호 범위일 때)
                 image_rel_path = None
-                if 681 <= q_num <= 965 and page_images:
+                img_filename = f"q{q_num}.png"
+                expected_img_path = os.path.join(image_output_dir, img_filename)
+
+                if extract_images and 681 <= q_num <= 965 and page_images:
                     matched_img = None
 
                     # 1차: 페이지 내 문제 수 = 이미지 수 일치 시 1:1 매칭
@@ -153,20 +158,22 @@ def extract_full_quiz(pdf_path, output_json_path, image_output_dir="extracted_im
 
                             if x1 > x0 and bottom > top:
                                 cropped_img = page.crop((x0, top, x1, bottom)).to_image()
-                                img_filename = f"q{q_num}.png"
-                                save_path = os.path.join(image_output_dir, img_filename)
-                                cropped_img.save(save_path)
-
+                                cropped_img.save(expected_img_path)
                                 image_rel_path = f"{image_output_dir}/{img_filename}"
                                 if matched_img in page_images:
                                     page_images.remove(matched_img)
                         except Exception as e:
                             print(f"이미지 추출 오류 (문제 {q_num}): {e}")
+                else:
+                    # 이미지를 새로 추출하지 않는 경우, 파일이 실제로 존재하면 경로 유지
+                    if os.path.exists(expected_img_path):
+                        image_rel_path = f"{image_output_dir}/{img_filename}"
 
                 if options:
                     q_data = {
                         "id": q_num,
                         "question": f"{q_num}. {q_text}",
+                        "image_description": image_description,  # 분리된 이미지/상황 설명 문구
                         "image": image_rel_path,
                         "options": options,
                         "answers": sorted(list(set(ans_nums))),
@@ -183,7 +190,9 @@ def extract_full_quiz(pdf_path, output_json_path, image_output_dir="extracted_im
     print(f"완료! 총 {len(sorted_q)}문제가 '{output_json_path}'에 저장되었습니다.")
 
 
-# 실행
+# 실행 예시
 pdf_files = glob.glob("*.pdf")
 if pdf_files:
-    extract_full_quiz(pdf_files[0], "questions_full.json")
+    # 최초 실행 시에는 이미지를 추출하기 위해 extract_images=True (또는 생략)
+    # 이후 속도를 빠르게 하려면 extract_images=False 로 변경하여 실행하세요!
+    extract_full_quiz(pdf_files[0], "questions_full.json", extract_images=False)

@@ -4,177 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>운전면허 필기 마스터</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        
-        html, body { 
-            height: 100%; 
-            height: 100dvh; 
-            overflow: hidden; 
-            background-color: #f1f5f9; 
-            color: #1e293b; 
-        }
-        
-        body { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            padding: 8px; 
-        }
-        
-        .container { 
-            width: 100%; 
-            max-width: 600px; 
-            height: 100%; 
-            max-height: 100%;
-            background: #ffffff; 
-            padding: 12px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
-            display: flex; 
-            flex-direction: column; 
-            position: relative;
-            overflow: hidden; 
-        }
-        
-        .header-title { display: flex; justify-content: center; align-items: center; gap: 6px; position: relative; margin-bottom: 8px; flex-shrink: 0; }
-        h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
-        .help-btn { background: none; border: none; cursor: pointer; font-size: 0.85rem; opacity: 0.5; transition: opacity 0.2s; padding: 2px; }
-        .help-btn:hover { opacity: 1; }
-        
-        .tab-group { display: flex; background: #e2e8f0; border-radius: 8px; padding: 3px; margin-bottom: 8px; flex-shrink: 0; }
-        .tab-btn { flex: 1; padding: 8px; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; background: transparent; color: #64748b; transition: all 0.2s; }
-        .tab-btn.active { background: #ffffff; color: #2563eb; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-
-        .top-nav { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; font-size: 0.8rem; flex-shrink: 0; }
-        .top-nav input[type="number"] { width: 50px; padding: 3px; text-align: center; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: bold; }
-        .top-nav button { padding: 3px 8px; background: #475569; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
-
-        .hide-toggle-label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 600; color: #059669; }
-        .hide-toggle-label input { accent-color: #059669; cursor: pointer; }
-
-        .timer-box { font-weight: bold; color: #ef4444; font-size: 0.9rem; }
-
-        .toast-msg {
-            position: absolute;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.88);
-            color: #ffffff;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            z-index: 100;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            white-space: nowrap;
-        }
-        .toast-msg.show { opacity: 1; }
-
-        .card-wrapper {
-            position: relative;
-            flex: 1;
-            min-height: 0; 
-            overflow: hidden; 
-            border-radius: 10px;
-        }
-
-        .card { 
-            width: 100%;
-            height: 100%;
-            background: #fff; 
-            border: 2px solid #e2e8f0; 
-            border-radius: 10px; 
-            padding: 10px; 
-            overflow-y: auto; 
-            display: flex;
-            flex-direction: column;
-            touch-action: pan-y; /* 세로 스크롤 허용, 좌우 스와이프 충돌 방지 */
-            user-select: none;
-            transition: transform 0.25s ease-in-out, opacity 0.25s ease-in-out;
-        }
-
-        .slide-out-left { transform: translateX(-100%); opacity: 0; }
-        .slide-out-right { transform: translateX(100%); opacity: 0; }
-        .slide-in-from-right { transform: translateX(100%); opacity: 0; }
-        .slide-in-from-left { transform: translateX(-100%); opacity: 0; }
-
-        .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dashed #e2e8f0; flex-shrink: 0; }
-        .memorized-check { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: bold; color: #059669; cursor: pointer; }
-        .memorized-check input { width: 15px; height: 15px; accent-color: #059669; cursor: pointer; }
-
-        .q-text { font-size: 0.92rem; font-weight: 600; line-height: 1.4; color: #0f172a; margin-bottom: 8px; word-break: keep-all; flex-shrink: 0; }
-        
-        .q-img {
-            max-width: 100%;
-            max-height: 130px;
-            object-fit: contain;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-            margin: 0 auto 8px auto;
-            display: block;
-            flex-shrink: 0;
-        }
-
-        .kw-highlight { 
-            background: #fef08a; 
-            color: #854d0e; 
-            font-weight: 800; 
-            padding: 1px 3px; 
-            border-radius: 3px; 
-        }
-
-        .memorize-options-list { display: flex; flex-direction: column; gap: 5px; margin-top: 4px; }
-        
-        .mem-opt-item { 
-            padding: 7px 9px; 
-            border: 1px solid #e2e8f0; 
-            background: #f8fafc; 
-            border-radius: 6px; 
-            font-size: 0.82rem; 
-            font-weight: 400; 
-            line-height: 1.3; 
-            word-break: keep-all; 
-            color: #94a3b8; 
-            opacity: 0.5;
-            transition: all 0.15s ease;
-        }
-
-        .mem-opt-item.is-answer { 
-            background-color: #dcfce7 !important; 
-            border: 1.5px solid #22c55e !important; 
-            color: #15803d !important; 
-            font-weight: 700 !important; 
-            opacity: 1 !important;
-            box-shadow: 0 2px 4px rgba(34,197,94,0.12); 
-        }
-
-        .options-list { display: flex; flex-direction: column; gap: 5px; margin-top: auto; }
-        .opt-btn { width: 100%; text-align: left; padding: 7px 9px; border: 1.5px solid #cbd5e1; background: #f8fafc; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; line-height: 1.3; word-break: keep-all; transition: all 0.15s; color: #334155; }
-        
-        .opt-btn.correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #15803d !important; font-weight: 700; }
-        .opt-btn.wrong { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #b91c1c !important; font-weight: 700; }
-
-        .btn-group { display: flex; gap: 6px; margin-top: 8px; flex-shrink: 0; }
-        .btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 0.9rem; cursor: pointer; text-align: center; }
-        .btn-submit { background-color: #2563eb; color: #ffffff; }
-        
-        #loading { text-align: center; margin: auto; padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .file-select-btn { padding: 8px 16px; background: #2563eb; color: #ffffff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; display: inline-block; }
-
-        .result-screen { text-align: center; margin: auto; }
-        .result-score { font-size: 2rem; font-weight: 800; margin: 8px 0; }
-        .pass { color: #16a34a; }
-        .fail { color: #dc2626; }
-        .restart-btn { padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.9rem; cursor: pointer; margin-top: 8px; }
-        
-        .exam-setup-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.8rem; }
-        .exam-setup-group select, .exam-setup-group input { padding: 3px 5px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: bold; }
-    </style>
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
@@ -197,42 +27,57 @@
                 <button onclick="jumpToQ()">이동</button>
             </div>
             <label class="hide-toggle-label">
-                <input type="checkbox" id="hideMemorizedCheck" onchange="toggleHideMemorized()">
+                <input type="checkbox" id="hideMemorizedCheck" onchange="toggleHideMemorized()" checked>
                 외운 문제 제외
             </label>
         </div>
 
         <div id="examStartBox" class="exam-setup-group" style="display:none;">
-            <div>
-                <strong>필터:</strong>
-                <select id="examFilterSelect" style="color: #2563eb;">
-                    <option value="all" selected>전체 문제</option>
-                    <option value="unmemorized">미완료 문제만</option>
-                    <option value="memorized">⭐ 외운 문제만 (복습)</option>
-                </select>
+            <!-- 1행: 필터 및 범위 설정 -->
+            <div class="exam-setup-row">
+                <div class="setup-item">
+                    <span class="setup-label">필터</span>
+                    <select id="examFilterSelect" class="custom-select">
+                        <option value="all" selected>전체 문제</option>
+                        <option value="unmemorized">미완료 문제만</option>
+                        <option value="memorized">⭐ 외운 문제만</option>
+                    </select>
+                </div>
+                <div class="setup-item range-item">
+                    <span class="setup-label">범위</span>
+                    <input type="number" id="rangeStart" min="1" value="1"> 
+                    <span class="range-tilde">~</span> 
+                    <input type="number" id="rangeEnd" min="1" value="100">
+                </div>
             </div>
-            <div>
-                <strong>범위:</strong>
-                <input type="number" id="rangeStart" min="1" value="1"> ~ 
-                <input type="number" id="rangeEnd" min="1" value="100">
+
+            <!-- 2행: 문항 수 선택 및 시작 버튼 -->
+            <div class="exam-setup-row">
+                <div class="setup-item">
+                    <span class="setup-label">문항</span>
+                    <select id="examCountSelect" class="custom-select">
+                        <option value="5" selected>5문제</option>
+                        <option value="10">10문제</option>
+                        <option value="20">20문제</option>
+                        <option value="40">40문제</option>
+                    </select>
+                </div>
+                <button onclick="startNewExam()" class="exam-start-btn">🚀 시작</button>
             </div>
-            <div>
-                <strong>문항:</strong>
-                <select id="examCountSelect">
-                    <option value="5">5문제</option>
-                    <option value="10">10문제</option>
-                    <option value="20">20문제</option>
-                    <option value="40" selected>40문제</option>
-                </select>
-            </div>
-            <button onclick="startNewExam()" style="padding: 3px 8px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">🚀 시작</button>
         </div>
 
         <div class="timer-box" id="timerBox" style="display:none;">⏱️ 40:00</div>
         <span id="totalIdx">0 / 0</span>
     </div>
 
-    <div class="card-wrapper">
+    <div class="card-wrapper" id="cardWrapper">
+        <!-- 모의고사 시작 전 안내 화면 -->
+        <div class="exam-ready-screen" id="examBeforeStart" style="display:none;">
+            <div style="font-size: 1.5rem; margin-bottom: 8px;">📝</div>
+            <div style="font-weight: bold; color: #334155; font-size: 0.95rem; margin-bottom: 4px;">모의고사 모드 준비 중</div>
+            <div style="color: #64748b; font-size: 0.8rem;">상단에서 조건을 설정하고 [🚀 시작] 버튼을 눌러주세요.</div>
+        </div>
+
         <div class="card" id="cardBox">
             <div id="loading">
                 <div style="font-weight: bold; color: #2563eb; line-height: 1.4; font-size: 0.9rem;">
@@ -249,11 +94,18 @@
                     </label>
                 </div>
 
+                <!-- 1. 지문 -->
                 <div class="q-text" id="qText"></div>
-                <img id="qImage" class="q-img" src="" alt="문제 이미지" style="display: none;">
 
+                <!-- 2. 보기 -->
                 <div class="options-list" id="optList" style="display:none;"></div>
                 <div class="memorize-options-list" id="memOptList" style="display:none;"></div>
+
+                <!-- 3. 이미지와 이미지 설명 가로 배치 영역 -->
+                <div id="qImgContainer" class="q-img-container" style="display: none;">
+                    <img id="qImage" class="q-img" src="" alt="문제 이미지">
+                    <div id="qImageDesc" class="q-img-desc"></div>
+                </div>
             </div>
 
             <div id="resultContent" class="result-screen" style="display:none;">
@@ -273,562 +125,6 @@
     </div>
 </div>
 
-<script>
-    let db = []; 
-    let activeDb = []; 
-    let examDb = []; 
-
-    let memorizeIdx = 0;
-    let examIdx = 0;
-    let currentMode = 'memorize'; 
-    let isExamStarted = false;
-    let isAnimating = false;
-    let hideMemorized = false;
-    
-    let memorizedSet = new Set(JSON.parse(localStorage.getItem('memorized_questions') || '[]'));
-
-    let userAnswers = {}; 
-    let timerInterval = null;
-    let timeLeft = 2400; 
-
-    let dragStartX = 0;
-    let dragEndX = 0;
-    let isMouseDown = false;
-
-    const cardBox = document.getElementById('cardBox');
-
-    window.addEventListener('DOMContentLoaded', () => {
-        loadJsonData();
-    });
-
-    function loadJsonData() {
-        fetch('./questions_full.json')
-            .then(response => {
-                if (!response.ok) throw new Error('네트워크 응답 오류');
-                return response.json();
-            })
-            .then(data => {
-                initQuiz(data);
-            })
-            .catch(error => {
-                console.error('JSON 파일 로드 실패:', error);
-                document.getElementById('loading').innerHTML = `
-                    <div style="font-weight: bold; color: #ef4444; line-height: 1.4; font-size: 0.85rem;">
-                        ⚠️ questions_full.json 데이터를 불러오지 못했습니다.<br>수동으로 선택해 주세요.
-                    </div>
-                    <button class="file-select-btn" onclick="triggerFileInput()">📁 파일 선택</button>
-                    <input type="file" id="jsonFileInput" accept=".json" onchange="handleFileUpload(event)" style="display: none;">
-                `;
-            });
-    }
-
-    cardBox.addEventListener('touchstart', e => {
-        dragStartX = e.changedTouches[0].screenX;
-    }, false);
-
-    cardBox.addEventListener('touchend', e => {
-        dragEndX = e.changedTouches[0].screenX;
-        handleSwipe();
-    }, false);
-
-    cardBox.addEventListener('mousedown', e => {
-        isMouseDown = true;
-        dragStartX = e.screenX;
-    });
-
-    cardBox.addEventListener('mouseup', e => {
-        if (!isMouseDown) return;
-        isMouseDown = false;
-        dragEndX = e.screenX;
-        handleSwipe();
-    });
-
-    cardBox.addEventListener('mouseleave', e => {
-        if (isMouseDown) {
-            isMouseDown = false;
-            dragEndX = e.screenX;
-            handleSwipe();
-        }
-    });
-
-    document.addEventListener('keydown', e => {
-        const activeEl = document.activeElement;
-        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT')) return;
-
-        if (e.key === 'ArrowLeft') {
-            e.preventDefault();
-            swipeTo('prev');
-        } else if (e.key === 'ArrowRight') {
-            e.preventDefault();
-            swipeTo('next');
-        }
-    });
-
-    function showSwipeGuide(force = false) {
-        if (force || !localStorage.getItem('swipe_guide_shown')) {
-            const toast = document.getElementById('toastMsg');
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-            localStorage.setItem('swipe_guide_shown', 'true');
-        }
-    }
-
-    function handleSwipe() {
-        const isResultVisible = document.getElementById('resultContent').style.display !== 'none';
-        if (!db.length || isAnimating || isResultVisible) return;
-        if (currentMode === 'exam' && !isExamStarted) return;
-
-        const threshold = 50; 
-        const diff = dragEndX - dragStartX;
-
-        if (Math.abs(diff) > threshold) {
-            if (diff < 0) swipeTo('next');
-            else swipeTo('prev');
-        }
-    }
-
-    function swipeTo(dir) {
-        const list = getCurList();
-        const curIdx = getCurIdx();
-
-        if (dir === 'next' && curIdx >= list.length - 1) {
-            if (currentMode === 'exam') {
-                submitExam();
-            } else {
-                alert('마지막 문제입니다.');
-            }
-            return;
-        }
-        if (dir === 'prev' && curIdx <= 0) return;
-
-        isAnimating = true;
-
-        const outClass = dir === 'next' ? 'slide-out-left' : 'slide-out-right';
-        const inClass = dir === 'next' ? 'slide-in-from-right' : 'slide-in-from-left';
-
-        cardBox.classList.add(outClass);
-
-        setTimeout(() => {
-            if (dir === 'next') setCurIdx(curIdx + 1);
-            else setCurIdx(curIdx - 1);
-            loadQ();
-
-            cardBox.style.transition = 'none';
-            cardBox.classList.remove(outClass);
-            cardBox.classList.add(inClass);
-
-            cardBox.offsetHeight; 
-
-            cardBox.style.transition = 'transform 0.25s ease-in-out, opacity 0.25s ease-in-out';
-            cardBox.classList.remove(inClass);
-
-            setTimeout(() => { isAnimating = false; }, 250);
-        }, 200);
-    }
-
-    function triggerFileInput() {
-        const input = document.getElementById('jsonFileInput');
-        if (input) input.click();
-    }
-
-    function handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = JSON.parse(e.target.result);
-                initQuiz(data);
-            } catch (err) {
-                alert("올바른 JSON 파일이 아닙니다.");
-            }
-        };
-        reader.readAsText(file);
-    }
-
-    function initQuiz(data) {
-        db = data.map((item, idx) => ({ ...item, _id: item.id || idx + 1 }));
-        document.getElementById('loading').style.display = 'none';
-
-        if (db.length) {
-            document.getElementById('rangeStart').value = 1;
-            document.getElementById('rangeEnd').value = db.length;
-        }
-
-        updateActiveDb();
-        switchMode(currentMode); 
-        showSwipeGuide();
-    }
-
-    function updateActiveDb() {
-        if (hideMemorized) {
-            activeDb = db.filter(item => !memorizedSet.has(item._id));
-        } else {
-            activeDb = [...db];
-        }
-    }
-
-    function toggleHideMemorized() {
-        hideMemorized = document.getElementById('hideMemorizedCheck').checked;
-        updateActiveDb();
-        memorizeIdx = 0;
-        loadQ();
-    }
-
-    function toggleItemMemorized(isChecked) {
-        const list = getCurList();
-        if (!list.length) return;
-
-        const currentItem = list[getCurIdx()];
-        if (!currentItem) return;
-
-        if (isChecked) {
-            memorizedSet.add(currentItem._id);
-        } else {
-            memorizedSet.delete(currentItem._id);
-        }
-
-        localStorage.setItem('memorized_questions', JSON.stringify(Array.from(memorizedSet)));
-
-        if (currentMode === 'memorize' && hideMemorized && isChecked) {
-            updateActiveDb();
-            if (memorizeIdx >= activeDb.length) memorizeIdx = Math.max(0, activeDb.length - 1);
-            loadQ();
-        }
-    }
-
-    function switchMode(mode) {
-        // 모의고사 진행 중인 상태에서 암기장(memorize) 모드로 가려고 할 때 경고 팝업
-        if (currentMode === 'exam' && isExamStarted && mode === 'memorize') {
-            const confirmLeave = confirm("⚠️ 진행 중이던 모의고사가 중단되고 초기화됩니다.\n정말 암기장으로 이동하시겠습니까?");
-            if (!confirmLeave) {
-                return; // 취소를 누르면 탭 이동을 막고 현재 모의고사 유지
-            }
-        }
-
-        currentMode = mode;
-        document.getElementById('tabMemorize').classList.toggle('active', mode === 'memorize');
-        document.getElementById('tabExam').classList.toggle('active', mode === 'exam');
-
-        const navLeft = document.getElementById('navLeft');
-        const examStartBox = document.getElementById('examStartBox');
-        const timerBox = document.getElementById('timerBox');
-        const btnGroup = document.getElementById('btnGroup');
-
-        if (mode === 'memorize') {
-            // 사용자가 확인을 누르고 들어왔으므로 시험 상태 강제 종료 및 리셋
-            isExamStarted = false;
-            clearInterval(timerInterval);
-            userAnswers = {};
-
-            navLeft.style.display = 'flex';
-            examStartBox.style.display = 'none';
-            timerBox.style.display = 'none';
-            btnGroup.style.display = 'none';
-            document.getElementById('resultContent').style.display = 'none';
-
-            if (db.length) {
-                document.getElementById('quizContent').style.display = 'flex';
-                document.getElementById('qInput').max = db.length;
-                updateActiveDb();
-                loadQ();
-            }
-        } else {
-            // 모의고사 탭으로 진입할 때 (항상 초기 세팅 화면부터 시작)
-            navLeft.style.display = 'none';
-            resetExamSetup();
-        }
-    }
-
-    function getCurIdx() {
-        return currentMode === 'memorize' ? memorizeIdx : examIdx;
-    }
-
-    function setCurIdx(val) {
-        if (currentMode === 'memorize') memorizeIdx = val;
-        else examIdx = val;
-    }
-
-    function getCurList() {
-        return currentMode === 'memorize' ? activeDb : examDb;
-    }
-
-    function highlightKeywords(text) {
-        if (!text) return "";
-        let html = text;
-
-        const keywords = [
-            '2가지', '두 가지', '두가지', '3가지', 
-            '틀린 것은', '틀린것은', 
-            '가장 적절하지 않은', '적절하지 않은', '적절하지않은',
-            '아닌 것은', '아닌것은', 
-            '올바르지 않은', '올바르지않은',
-            '바르지 않은', '바르지않은',
-            '불가능한', '가장 큰 이유', '과태료', '벌점', '우선순위', '안전거리', '옳지 않은', '옳지않은'
-        ];
-
-        keywords.forEach(kw => {
-            const reg = new RegExp(kw, 'g');
-            html = html.replace(reg, `<span class="kw-highlight">${kw}</span>`);
-        });
-
-        return html;
-    }
-
-    function loadQ() {
-        const list = getCurList();
-        
-        if (!list || !list.length) {
-            if (currentMode === 'memorize' && hideMemorized) {
-                document.getElementById('qText').innerHTML = "🎉 모든 문제를 완료(외움) 처리하셨습니다!";
-                document.getElementById('qImage').style.display = 'none';
-                document.getElementById('memOptList').style.display = 'none';
-                document.getElementById('totalIdx').innerText = '0 / 0';
-                document.getElementById('qHeader').style.display = 'none';
-                return;
-            }
-            return;
-        }
-
-        document.getElementById('qHeader').style.display = 'flex';
-
-        const curIdx = getCurIdx();
-        const item = list[curIdx];
-
-        document.getElementById('qCategory').innerText = item.category || '문제';
-        document.getElementById('itemMemorizedCheck').checked = memorizedSet.has(item._id);
-        document.getElementById('qText').innerHTML = highlightKeywords(item.question);
-
-        const imgUrl = item.image_url || item.image || item.img || null;
-        const qImageEl = document.getElementById('qImage');
-        if (imgUrl) {
-            qImageEl.src = imgUrl;
-            qImageEl.style.display = 'block';
-        } else {
-            qImageEl.src = '';
-            qImageEl.style.display = 'none';
-        }
-
-        document.getElementById('qInput').value = item._id; 
-        document.getElementById('totalIdx').innerText = `${curIdx + 1} / ${list.length}`;
-        document.getElementById('cardBox').scrollTop = 0;
-
-        const optList = document.getElementById('optList');
-        const memOptList = document.getElementById('memOptList');
-        let formattedOptions = item.options || [];
-
-        if (currentMode === 'memorize') {
-            optList.style.display = 'none';
-            memOptList.style.display = 'flex';
-            memOptList.innerHTML = '';
-
-            formattedOptions.forEach((optText, index) => {
-                const optNum = index + 1;
-                const optDiv = document.createElement('div');
-                const isCorrect = item.answers.includes(optNum);
-                
-                optDiv.className = `mem-opt-item ${isCorrect ? 'is-answer' : ''}`;
-                optDiv.innerText = `${isCorrect ? '✓ ' : ''}${optText}`;
-                memOptList.appendChild(optDiv);
-            });
-
-        } else {
-            memOptList.style.display = 'none';
-            optList.style.display = 'flex';
-            optList.innerHTML = '';
-
-            const selectedArr = userAnswers[curIdx] || [];
-            const requiredCount = item.answers.length;
-            const isDone = selectedArr.length >= requiredCount;
-
-            formattedOptions.forEach((optText, index) => {
-                const optNum = index + 1;
-                const btn = document.createElement('button');
-                btn.className = 'opt-btn';
-                btn.innerText = optText;
-
-                if (selectedArr.includes(optNum)) {
-                    if (item.answers.includes(optNum)) {
-                        btn.classList.add('correct');
-                    } else {
-                        btn.classList.add('wrong');
-                    }
-                }
-
-                if (isDone) {
-                    btn.disabled = true;
-                    if (item.answers.includes(optNum)) {
-                        btn.classList.add('correct');
-                    }
-                } else {
-                    if (selectedArr.includes(optNum)) {
-                        btn.disabled = true;
-                    } else {
-                        btn.onclick = () => selectOption(optNum);
-                    }
-                }
-
-                optList.appendChild(btn);
-            });
-        }
-    }
-
-    function selectOption(selectedNum) {
-        const curIdx = getCurIdx();
-        if (!userAnswers[curIdx]) userAnswers[curIdx] = [];
-        if (!userAnswers[curIdx].includes(selectedNum)) userAnswers[curIdx].push(selectedNum);
-        loadQ();
-    }
-
-    function jumpToQ() {
-        const targetId = parseInt(document.getElementById('qInput').value);
-        const list = getCurList();
-
-        const foundIdx = list.findIndex(item => item._id === targetId);
-
-        if (foundIdx !== -1) {
-            setCurIdx(foundIdx);
-            loadQ();
-        } else {
-            if (hideMemorized && memorizedSet.has(targetId)) {
-                alert("해당 문제는 '외운 문제'에 포함되어 있어 제외 상태입니다. 스위치를 꺼주세요.");
-            } else {
-                alert(`1부터 ${db.length} 사이의 올바른 문제 번호를 입력해주세요.`);
-            }
-        }
-    }
-
-    function startNewExam() {
-        if (!db.length) return;
-
-        const filterType = document.getElementById('examFilterSelect').value;
-        const startInput = parseInt(document.getElementById('rangeStart').value);
-        const endInput = parseInt(document.getElementById('rangeEnd').value);
-
-        if (isNaN(startInput) || isNaN(endInput) || startInput < 1 || endInput > db.length || startInput > endInput) {
-            alert(`올바른 범위를 입력해주세요. (1 ~ ${db.length} 사이)`);
-            return;
-        }
-
-        let pool = db.slice(startInput - 1, endInput);
-
-        if (filterType === 'memorized') {
-            pool = pool.filter(item => memorizedSet.has(item._id));
-        } else if (filterType === 'unmemorized') {
-            pool = pool.filter(item => !memorizedSet.has(item._id));
-        }
-
-        const selectedCount = parseInt(document.getElementById('examCountSelect').value || 40);
-
-        if (pool.length < selectedCount) {
-            if (filterType === 'memorized') {
-                alert(`선택한 범위 내 '외운 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)\n문제 암기를 더 진행하신 후 도전해 보세요!`);
-            } else {
-                alert(`선택한 조건의 문제 수가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)`);
-            }
-            return;
-        }
-
-        const shuffled = [...pool].sort(() => 0.5 - Math.random());
-        examDb = shuffled.slice(0, selectedCount);
-
-        examIdx = 0;
-        userAnswers = {};
-        timeLeft = 2400;
-        isExamStarted = true;
-
-        document.getElementById('examStartBox').style.display = 'none';
-        document.getElementById('timerBox').style.display = 'block';
-        document.getElementById('btnGroup').style.display = 'flex';
-        document.getElementById('resultContent').style.display = 'none';
-        document.getElementById('quizContent').style.display = 'flex';
-
-        startTimer();
-        loadQ();
-    }
-
-    function resetExamSetup() {
-        isExamStarted = false;
-        clearInterval(timerInterval);
-        userAnswers = {};
-        document.getElementById('resultContent').style.display = 'none';
-        document.getElementById('examStartBox').style.display = 'flex';
-        document.getElementById('timerBox').style.display = 'none';
-        document.getElementById('btnGroup').style.display = 'none';
-        document.getElementById('quizContent').style.display = 'none';
-        document.getElementById('totalIdx').innerText = '0 / 0';
-    }
-
-    function startTimer() {
-        clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                alert("시험 시간이 종료되었습니다.");
-                submitExam();
-            } else {
-                timeLeft--;
-                updateTimerDisplay();
-            }
-        }, 1000);
-    }
-
-    function updateTimerDisplay() {
-        const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-        const s = (timeLeft % 60).toString().padStart(2, '0');
-        document.getElementById('timerBox').innerText = `⏱️ ${m}:${s}`;
-    }
-
-    function submitExam() {
-        const totalExamQ = examDb.length;
-        if (Object.keys(userAnswers).length < totalExamQ) {
-            if (!confirm(`아직 안 푼 문제가 있습니다. 정말 제출하시겠습니까?`)) return;
-        }
-
-        clearInterval(timerInterval);
-        isExamStarted = false;
-
-        let correctCount = 0;
-        examDb.forEach((item, idx) => {
-            const userAnsArr = userAnswers[idx] || [];
-            if (item.answers.length === userAnsArr.length && item.answers.every(a => userAnsArr.includes(a))) {
-                correctCount++;
-            }
-        });
-
-        const score = Math.round((correctCount / totalExamQ) * 100);
-
-        document.getElementById('quizContent').style.display = 'none';
-        document.getElementById('btnGroup').style.display = 'none';
-        document.getElementById('timerBox').style.display = 'none';
-        
-        const resultContent = document.getElementById('resultContent');
-        const scoreText = document.getElementById('scoreText');
-        const passText = document.getElementById('passText');
-
-        resultContent.style.display = 'block';
-        scoreText.innerText = `${score}점`;
-
-        if (score >= 70) {
-            scoreText.className = 'result-score pass';
-            passText.className = 'pass';
-            passText.innerText = '🎉 1종/2종 보통 합격!';
-        } else if (score >= 60) {
-            scoreText.className = 'result-score pass';
-            passText.className = 'pass';
-            passText.innerText = '🎉 2종 보통 합격 (1종 불합격)';
-        } else {
-            scoreText.className = 'result-score fail';
-            passText.className = 'fail';
-            passText.innerText = '💥 불합격입니다.';
-        }
-
-        document.getElementById('resultDetail').innerText = `총 ${totalExamQ}문제 중 ${correctCount}문제를 맞히셨습니다.`;
-    }
-</script>
-
+<script src="./script.js"></script>
 </body>
 </html>
