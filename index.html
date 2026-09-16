@@ -75,7 +75,6 @@
         }
         .toast-msg.show { opacity: 1; }
 
-        /* 카드 이탈 방지 조치 */
         .card-wrapper {
             position: relative;
             flex: 1;
@@ -94,20 +93,15 @@
             overflow-y: auto; 
             display: flex;
             flex-direction: column;
-            touch-action: pan-x;
+            touch-action: pan-y; /* 세로 스크롤 허용, 좌우 스와이프 충돌 방지 */
             user-select: none;
             transition: transform 0.25s ease-in-out, opacity 0.25s ease-in-out;
-            cursor: grab;
-            -webkit-overflow-scrolling: touch;
-        }
-        .card:active {
-            cursor: grabbing;
         }
 
-        .slide-out-up { transform: translateY(-100%); opacity: 0; }
-        .slide-out-down { transform: translateY(100%); opacity: 0; }
-        .slide-in-from-bottom { transform: translateY(100%); opacity: 0; }
-        .slide-in-from-top { transform: translateY(-100%); opacity: 0; }
+        .slide-out-left { transform: translateX(-100%); opacity: 0; }
+        .slide-out-right { transform: translateX(100%); opacity: 0; }
+        .slide-in-from-right { transform: translateX(100%); opacity: 0; }
+        .slide-in-from-left { transform: translateX(-100%); opacity: 0; }
 
         .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dashed #e2e8f0; flex-shrink: 0; }
         .memorized-check { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: bold; color: #059669; cursor: pointer; }
@@ -267,12 +261,12 @@
                 <div id="scoreText" class="result-score">0점</div>
                 <div id="passText" style="font-size: 1rem; font-weight: bold; margin-bottom: 6px;"></div>
                 <div id="resultDetail" style="color: #64748b; font-size: 0.85rem;"></div>
-                <button class="restart-btn" onclick="switchMode('exam')">🔄 다시 도전하기</button>
+                <button class="restart-btn" onclick="resetExamSetup()">🔄 다시 도전하기</button>
             </div>
         </div>
     </div>
 
-    <div class="toast-msg" id="toastMsg">👆 터치/드래그 또는 방향키(↑/↓)로 스와이프 하세요</div>
+    <div class="toast-msg" id="toastMsg">👈 좌우로 스와이프 또는 방향키(←/→)로 넘기세요</div>
 
     <div class="btn-group" id="btnGroup" style="display:none;">
         <button class="btn btn-submit" id="submitBtn" onclick="submitExam()">시험 제출</button>
@@ -297,8 +291,8 @@
     let timerInterval = null;
     let timeLeft = 2400; 
 
-    let dragStartY = 0;
-    let dragEndY = 0;
+    let dragStartX = 0;
+    let dragEndX = 0;
     let isMouseDown = false;
 
     const cardBox = document.getElementById('cardBox');
@@ -310,9 +304,7 @@
     function loadJsonData() {
         fetch('./questions_full.json')
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('네트워크 응답이 올바르지 않습니다.');
-                }
+                if (!response.ok) throw new Error('네트워크 응답 오류');
                 return response.json();
             })
             .then(data => {
@@ -331,30 +323,30 @@
     }
 
     cardBox.addEventListener('touchstart', e => {
-        dragStartY = e.changedTouches[0].screenY;
+        dragStartX = e.changedTouches[0].screenX;
     }, false);
 
     cardBox.addEventListener('touchend', e => {
-        dragEndY = e.changedTouches[0].screenY;
+        dragEndX = e.changedTouches[0].screenX;
         handleSwipe();
     }, false);
 
     cardBox.addEventListener('mousedown', e => {
         isMouseDown = true;
-        dragStartY = e.screenY;
+        dragStartX = e.screenX;
     });
 
     cardBox.addEventListener('mouseup', e => {
         if (!isMouseDown) return;
         isMouseDown = false;
-        dragEndY = e.screenY;
+        dragEndX = e.screenX;
         handleSwipe();
     });
 
     cardBox.addEventListener('mouseleave', e => {
         if (isMouseDown) {
             isMouseDown = false;
-            dragEndY = e.screenY;
+            dragEndX = e.screenX;
             handleSwipe();
         }
     });
@@ -363,10 +355,10 @@
         const activeEl = document.activeElement;
         if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT')) return;
 
-        if (e.key === 'ArrowUp') {
+        if (e.key === 'ArrowLeft') {
             e.preventDefault();
             swipeTo('prev');
-        } else if (e.key === 'ArrowDown') {
+        } else if (e.key === 'ArrowRight') {
             e.preventDefault();
             swipeTo('next');
         }
@@ -388,8 +380,8 @@
         if (!db.length || isAnimating || isResultVisible) return;
         if (currentMode === 'exam' && !isExamStarted) return;
 
-        const threshold = 40; 
-        const diff = dragEndY - dragStartY;
+        const threshold = 50; 
+        const diff = dragEndX - dragStartX;
 
         if (Math.abs(diff) > threshold) {
             if (diff < 0) swipeTo('next');
@@ -413,8 +405,8 @@
 
         isAnimating = true;
 
-        const outClass = dir === 'next' ? 'slide-out-up' : 'slide-out-down';
-        const inClass = dir === 'next' ? 'slide-in-from-bottom' : 'slide-in-from-top';
+        const outClass = dir === 'next' ? 'slide-out-left' : 'slide-out-right';
+        const inClass = dir === 'next' ? 'slide-in-from-right' : 'slide-in-from-left';
 
         cardBox.classList.add(outClass);
 
@@ -509,6 +501,14 @@
     }
 
     function switchMode(mode) {
+        // 모의고사 진행 중인 상태에서 암기장(memorize) 모드로 가려고 할 때 경고 팝업
+        if (currentMode === 'exam' && isExamStarted && mode === 'memorize') {
+            const confirmLeave = confirm("⚠️ 진행 중이던 모의고사가 중단되고 초기화됩니다.\n정말 암기장으로 이동하시겠습니까?");
+            if (!confirmLeave) {
+                return; // 취소를 누르면 탭 이동을 막고 현재 모의고사 유지
+            }
+        }
+
         currentMode = mode;
         document.getElementById('tabMemorize').classList.toggle('active', mode === 'memorize');
         document.getElementById('tabExam').classList.toggle('active', mode === 'exam');
@@ -518,14 +518,17 @@
         const timerBox = document.getElementById('timerBox');
         const btnGroup = document.getElementById('btnGroup');
 
-        document.getElementById('resultContent').style.display = 'none';
-
         if (mode === 'memorize') {
+            // 사용자가 확인을 누르고 들어왔으므로 시험 상태 강제 종료 및 리셋
+            isExamStarted = false;
             clearInterval(timerInterval);
+            userAnswers = {};
+
             navLeft.style.display = 'flex';
             examStartBox.style.display = 'none';
             timerBox.style.display = 'none';
             btnGroup.style.display = 'none';
+            document.getElementById('resultContent').style.display = 'none';
 
             if (db.length) {
                 document.getElementById('quizContent').style.display = 'flex';
@@ -534,21 +537,9 @@
                 loadQ();
             }
         } else {
+            // 모의고사 탭으로 진입할 때 (항상 초기 세팅 화면부터 시작)
             navLeft.style.display = 'none';
-
-            if (!isExamStarted) {
-                examStartBox.style.display = 'flex';
-                timerBox.style.display = 'none';
-                btnGroup.style.display = 'none';
-                document.getElementById('quizContent').style.display = 'none';
-                document.getElementById('totalIdx').innerText = '0 / 0';
-            } else {
-                examStartBox.style.display = 'none';
-                timerBox.style.display = 'block';
-                btnGroup.style.display = 'flex';
-                document.getElementById('quizContent').style.display = 'flex';
-                loadQ();
-            }
+            resetExamSetup();
         }
     }
 
@@ -588,106 +579,102 @@
     }
 
     function loadQ() {
-    const list = getCurList();
-    
-    if (!list || !list.length) {
-        if (currentMode === 'memorize' && hideMemorized) {
-            document.getElementById('qText').innerHTML = "🎉 모든 문제를 완료(외움) 처리하셨습니다!";
-            document.getElementById('qImage').style.display = 'none';
-            document.getElementById('memOptList').style.display = 'none';
-            document.getElementById('totalIdx').innerText = '0 / 0';
-            document.getElementById('qHeader').style.display = 'none';
+        const list = getCurList();
+        
+        if (!list || !list.length) {
+            if (currentMode === 'memorize' && hideMemorized) {
+                document.getElementById('qText').innerHTML = "🎉 모든 문제를 완료(외움) 처리하셨습니다!";
+                document.getElementById('qImage').style.display = 'none';
+                document.getElementById('memOptList').style.display = 'none';
+                document.getElementById('totalIdx').innerText = '0 / 0';
+                document.getElementById('qHeader').style.display = 'none';
+                return;
+            }
             return;
         }
-        return;
-    }
 
-    document.getElementById('qHeader').style.display = 'flex';
+        document.getElementById('qHeader').style.display = 'flex';
 
-    const curIdx = getCurIdx();
-    const item = list[curIdx];
+        const curIdx = getCurIdx();
+        const item = list[curIdx];
 
-    document.getElementById('qCategory').innerText = item.category || '문제';
-    document.getElementById('itemMemorizedCheck').checked = memorizedSet.has(item._id);
-    document.getElementById('qText').innerHTML = highlightKeywords(item.question);
+        document.getElementById('qCategory').innerText = item.category || '문제';
+        document.getElementById('itemMemorizedCheck').checked = memorizedSet.has(item._id);
+        document.getElementById('qText').innerHTML = highlightKeywords(item.question);
 
-    const imgUrl = item.image_url || item.image || item.img || null;
-    const qImageEl = document.getElementById('qImage');
-    if (imgUrl) {
-        qImageEl.src = imgUrl;
-        qImageEl.style.display = 'block';
-    } else {
-        qImageEl.src = '';
-        qImageEl.style.display = 'none';
-    }
+        const imgUrl = item.image_url || item.image || item.img || null;
+        const qImageEl = document.getElementById('qImage');
+        if (imgUrl) {
+            qImageEl.src = imgUrl;
+            qImageEl.style.display = 'block';
+        } else {
+            qImageEl.src = '';
+            qImageEl.style.display = 'none';
+        }
 
-    document.getElementById('qInput').value = item._id; 
-    document.getElementById('totalIdx').innerText = `${curIdx + 1} / ${list.length}`;
-    document.getElementById('cardBox').scrollTop = 0;
+        document.getElementById('qInput').value = item._id; 
+        document.getElementById('totalIdx').innerText = `${curIdx + 1} / ${list.length}`;
+        document.getElementById('cardBox').scrollTop = 0;
 
-    const optList = document.getElementById('optList');
-    const memOptList = document.getElementById('memOptList');
-    let formattedOptions = item.options || [];
+        const optList = document.getElementById('optList');
+        const memOptList = document.getElementById('memOptList');
+        let formattedOptions = item.options || [];
 
-    // 1. 암기장 모드
-    if (currentMode === 'memorize') {
-        optList.style.display = 'none';
-        memOptList.style.display = 'flex';
-        memOptList.innerHTML = '';
+        if (currentMode === 'memorize') {
+            optList.style.display = 'none';
+            memOptList.style.display = 'flex';
+            memOptList.innerHTML = '';
 
-        formattedOptions.forEach((optText, index) => {
-            const optNum = index + 1;
-            const optDiv = document.createElement('div');
-            const isCorrect = item.answers.includes(optNum);
-            
-            optDiv.className = `mem-opt-item ${isCorrect ? 'is-answer' : ''}`;
-            // 💡 데이터에 이미 번호가 포함되어 있으므로 optNum 추가 없이 optText만 출력
-            optDiv.innerText = `${isCorrect ? '✓ ' : ''}${optText}`;
-            memOptList.appendChild(optDiv);
-        });
+            formattedOptions.forEach((optText, index) => {
+                const optNum = index + 1;
+                const optDiv = document.createElement('div');
+                const isCorrect = item.answers.includes(optNum);
+                
+                optDiv.className = `mem-opt-item ${isCorrect ? 'is-answer' : ''}`;
+                optDiv.innerText = `${isCorrect ? '✓ ' : ''}${optText}`;
+                memOptList.appendChild(optDiv);
+            });
 
-    } else {
-        // 2. 모의고사(풀이) 모드
-        memOptList.style.display = 'none';
-        optList.style.display = 'flex';
-        optList.innerHTML = '';
+        } else {
+            memOptList.style.display = 'none';
+            optList.style.display = 'flex';
+            optList.innerHTML = '';
 
-        const selectedArr = userAnswers[curIdx] || [];
-        const requiredCount = item.answers.length;
-        const isDone = selectedArr.length >= requiredCount;
+            const selectedArr = userAnswers[curIdx] || [];
+            const requiredCount = item.answers.length;
+            const isDone = selectedArr.length >= requiredCount;
 
-        formattedOptions.forEach((optText, index) => {
-            const optNum = index + 1;
-            const btn = document.createElement('button');
-            btn.className = 'opt-btn';
-            // 💡 데이터에 이미 번호가 포함되어 있으므로 optNum 추가 없이 optText만 출력
-            btn.innerText = optText;
+            formattedOptions.forEach((optText, index) => {
+                const optNum = index + 1;
+                const btn = document.createElement('button');
+                btn.className = 'opt-btn';
+                btn.innerText = optText;
 
-            if (selectedArr.includes(optNum)) {
-                if (item.answers.includes(optNum)) {
-                    btn.classList.add('correct');
-                } else {
-                    btn.classList.add('wrong');
-                }
-            }
-
-            if (isDone) {
-                btn.disabled = true;
-                if (item.answers.includes(optNum)) {
-                    btn.classList.add('correct');
-                }
-            } else {
                 if (selectedArr.includes(optNum)) {
-                    btn.disabled = true;
-                } else {
-                    btn.onclick = () => selectOption(optNum);
+                    if (item.answers.includes(optNum)) {
+                        btn.classList.add('correct');
+                    } else {
+                        btn.classList.add('wrong');
+                    }
                 }
-            }
 
-            optList.appendChild(btn);
-        });
+                if (isDone) {
+                    btn.disabled = true;
+                    if (item.answers.includes(optNum)) {
+                        btn.classList.add('correct');
+                    }
+                } else {
+                    if (selectedArr.includes(optNum)) {
+                        btn.disabled = true;
+                    } else {
+                        btn.onclick = () => selectOption(optNum);
+                    }
+                }
+
+                optList.appendChild(btn);
+            });
+        }
     }
-}
 
     function selectOption(selectedNum) {
         const curIdx = getCurIdx();
@@ -761,6 +748,18 @@
 
         startTimer();
         loadQ();
+    }
+
+    function resetExamSetup() {
+        isExamStarted = false;
+        clearInterval(timerInterval);
+        userAnswers = {};
+        document.getElementById('resultContent').style.display = 'none';
+        document.getElementById('examStartBox').style.display = 'flex';
+        document.getElementById('timerBox').style.display = 'none';
+        document.getElementById('btnGroup').style.display = 'none';
+        document.getElementById('quizContent').style.display = 'none';
+        document.getElementById('totalIdx').innerText = '0 / 0';
     }
 
     function startTimer() {
