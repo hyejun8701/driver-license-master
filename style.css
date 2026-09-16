@@ -48,79 +48,6 @@ h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
 
 .timer-box { font-weight: bold; color: #ef4444; font-size: 0.9rem; }
 
-/* 모의고사 설정 영역 스타일 */
-.exam-setup-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background: #f8fafc;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid #e2e8f0;
-    margin-bottom: 8px;
-    width: 100%; /* 우측 공간이 비었을 때 전체 너비를 쓰도록 수정 */
-}
-
-.exam-setup-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.setup-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.85rem;
-    color: #334155;
-}
-
-.setup-label {
-    font-weight: 600;
-    color: #475569;
-    white-space: nowrap;
-}
-
-.exam-setup-group select,
-.exam-setup-group input[type="number"] {
-    padding: 4px 6px;
-    font-size: 0.85rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    background: #fff;
-    color: #1e293b;
-    outline: none;
-    font-weight: bold;
-}
-
-.exam-setup-group input[type="number"] {
-    width: 55px;
-    text-align: center;
-}
-
-.range-tilde {
-    color: #64748b;
-    font-weight: bold;
-}
-
-.exam-start-btn {
-    flex: 1;
-    padding: 6px 12px;
-    background: #2563eb;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.exam-start-btn:hover {
-    background: #1d4ed8;
-}
-
 .toast-msg {
     position: absolute;
     bottom: 16px;
@@ -258,6 +185,84 @@ h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
 .pass { color: #16a34a; }
 .fail { color: #dc2626; }
 .restart-btn { padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.9rem; cursor: pointer; margin-top: 8px; }
+
+/* 모의고사 설정 영역 스타일 (모바일 레이아웃 최적화) */
+.exam-setup-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #f8fafc;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 8px;
+    width: 100%;
+}
+
+.exam-setup-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
+}
+
+.setup-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: #334155;
+}
+
+.setup-item.range-item {
+    flex-shrink: 0;
+}
+
+.setup-label {
+    font-weight: 600;
+    color: #475569;
+    white-space: nowrap;
+}
+
+.exam-setup-group select,
+.exam-setup-group input[type="number"] {
+    padding: 4px 4px;
+    font-size: 0.8rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    color: #1e293b;
+    outline: none;
+    font-weight: bold;
+}
+
+.exam-setup-group input[type="number"] {
+    width: 50px;
+    text-align: center;
+}
+
+.range-tilde {
+    color: #64748b;
+    font-weight: bold;
+}
+
+.exam-start-btn {
+    flex: 1;
+    padding: 6px 10px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.exam-start-btn:hover {
+    background: #1d4ed8;
+}
 
 /* 모의고사 시작 전 가이드 화면 스타일 */
 .exam-ready-screen {
