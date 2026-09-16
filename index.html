@@ -201,7 +201,7 @@
     // Load Data
     async function loadData() {
         try {
-            const res = await fetch('driver_questions_1000.json');
+            const res = await fetch('questions_full.json');
             db = await res.json();
             filterData();
             renderCard();
