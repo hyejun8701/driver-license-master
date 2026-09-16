@@ -2,65 +2,88 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>운전면허 필기 마스터</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        html, body { 
+            height: 100%; 
+            height: 100dvh; 
+            overflow: hidden; 
+            background-color: #f1f5f9; 
+            color: #1e293b; 
+        }
         
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background: #f8fafc; 
-            color: #1e293b;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100dvh;
-            overflow: hidden;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 8px; 
         }
-
-        .app-container {
-            width: 100%;
-            max-width: 500px;
-            height: 100dvh;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-            padding: 8px 12px 12px 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        
+        .container { 
+            width: 100%; 
+            max-width: 600px; 
+            height: 100%; 
+            max-height: 100%;
+            background: #ffffff; 
+            padding: 12px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+            display: flex; 
+            flex-direction: column; 
             position: relative;
+            overflow: hidden; 
         }
+        
+        .header-title { display: flex; justify-content: center; align-items: center; gap: 6px; position: relative; margin-bottom: 8px; flex-shrink: 0; }
+        h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
+        .help-btn { background: none; border: none; cursor: pointer; font-size: 0.85rem; opacity: 0.5; transition: opacity 0.2s; padding: 2px; }
+        .help-btn:hover { opacity: 1; }
+        
+        .tab-group { display: flex; background: #e2e8f0; border-radius: 8px; padding: 3px; margin-bottom: 8px; flex-shrink: 0; }
+        .tab-btn { flex: 1; padding: 8px; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; background: transparent; color: #64748b; transition: all 0.2s; }
+        .tab-btn.active { background: #ffffff; color: #2563eb; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-        /* 헤더 */
-        .app-header { text-align: center; margin-bottom: 6px; flex-shrink: 0; }
-        .app-title { font-size: 1.1rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; font-size: 0.8rem; flex-shrink: 0; }
+        .top-nav input[type="number"] { width: 50px; padding: 3px; text-align: center; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: bold; }
+        .top-nav button { padding: 3px 8px; background: #475569; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
 
-        /* Mode Tabs */
-        .mode-tabs { display: flex; background: #e2e8f0; border-radius: 10px; padding: 3px; margin-bottom: 6px; flex-shrink: 0; }
-        .tab-btn { flex: 1; border: none; padding: 6px 0; border-radius: 8px; font-weight: 700; font-size: 0.85rem; color: #64748b; background: transparent; cursor: pointer; transition: 0.2s; }
-        .tab-btn.active { background: #fff; color: #2563eb; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .hide-toggle-label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 600; color: #059669; }
+        .hide-toggle-label input { accent-color: #059669; cursor: pointer; }
 
-        /* Top Bar Controls */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px; flex-shrink: 0; font-size: 0.82rem; }
-        .jump-box { display: flex; align-items: center; gap: 4px; }
-        .jump-box input { width: 48px; padding: 3px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 0.85rem; font-weight: 700; }
-        .btn-sm { padding: 4px 8px; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; background: #475569; color: #fff; }
-        .checkbox-label { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: #334155; }
-        .checkbox-label input { width: 14px; height: 14px; accent-color: #2563eb; }
+        .timer-box { font-weight: bold; color: #ef4444; font-size: 0.9rem; }
 
-        /* Progress Bar */
-        .progress-info { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 6px; flex-shrink: 0; }
+        .toast-msg {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.88);
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            white-space: nowrap;
+        }
+        .toast-msg.show { opacity: 1; }
 
-        /* Card Wrapper & Outer Slide Layout */
+        /* 카드 이탈 방지 조치 */
         .card-wrapper {
-            flex: 1;
             position: relative;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
+            flex: 1;
+            min-height: 0; 
+            overflow: hidden; 
             border-radius: 10px;
         }
 
-        /* Card Component */
         .card { 
             width: 100%;
             height: 100%;
@@ -71,451 +94,745 @@
             overflow-y: auto; 
             display: flex;
             flex-direction: column;
-            touch-action: pan-y; /* 세로 스크롤 허용 */
+            touch-action: pan-x;
             user-select: none;
             transition: transform 0.25s ease-in-out, opacity 0.25s ease-in-out;
             cursor: grab;
             -webkit-overflow-scrolling: touch;
         }
-
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-shrink: 0; }
-        .badge { font-size: 0.75rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #475569; }
-        .q-text { font-size: 0.95rem; font-weight: 700; line-height: 1.35; margin-bottom: 6px; color: #0f172a; flex-shrink: 0; }
-        .q-text .highlight { color: #d97706; background: #fef3c7; padding: 0 4px; border-radius: 3px; }
-
-        .img-container { width: 100%; text-align: center; margin-bottom: 6px; flex-shrink: 0; }
-        .img-container img { max-width: 100%; max-height: 130px; object-fit: contain; border-radius: 6px; border: 1px solid #f1f5f9; }
-
-        /* Options List */
-        .options-list { display: flex; flex-direction: column; gap: 4px; margin-top: auto; flex-shrink: 0; }
-        .option-item { 
-            display: flex; 
-            align-items: flex-start; 
-            gap: 6px; 
-            padding: 6px 8px; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 8px; 
-            font-size: 0.82rem; 
-            line-height: 1.25; 
-            cursor: pointer; 
-            background: #fff; 
-            transition: 0.15s; 
+        .card:active {
+            cursor: grabbing;
         }
-        .option-item.selected { border-color: #2563eb; background: #eff6ff; font-weight: 600; }
-        .option-item.correct { border-color: #16a34a; background: #f0fdf4; color: #15803d; font-weight: 700; }
-        .option-item.incorrect { border-color: #dc2626; background: #fef2f2; color: #b91c1c; }
-        .option-item input { display: none; }
 
-        /* Explanation Box */
-        .exp-box { margin-top: 6px; padding: 8px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.78rem; color: #334155; line-height: 1.3; flex-shrink: 0; }
+        .slide-out-up { transform: translateY(-100%); opacity: 0; }
+        .slide-out-down { transform: translateY(100%); opacity: 0; }
+        .slide-in-from-bottom { transform: translateY(100%); opacity: 0; }
+        .slide-in-from-top { transform: translateY(-100%); opacity: 0; }
 
-        /* Exam Overlay Result */
-        .result-container { display: none; flex-direction: column; height: 100%; width: 100%; background: #fff; border-radius: 10px; padding: 16px; align-items: center; justify-content: center; text-align: center; }
-        .result-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; }
-        .result-score { font-size: 2.2rem; font-weight: 900; color: #2563eb; margin-bottom: 12px; }
-        .result-status { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; padding: 4px 12px; border-radius: 20px; }
-        .pass { background: #dcfce7; color: #15803d; }
-        .fail { background: #fee2e2; color: #b91c1c; }
+        .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dashed #e2e8f0; flex-shrink: 0; }
+        .memorized-check { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: bold; color: #059669; cursor: pointer; }
+        .memorized-check input { width: 15px; height: 15px; accent-color: #059669; cursor: pointer; }
 
-        /* Exam Control Bar Bottom */
-        .exam-controls { display: flex; gap: 8px; margin-top: 6px; flex-shrink: 0; }
-        .btn-action { flex: 1; padding: 8px 0; border: none; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; color: #fff; }
-        .btn-primary { background: #2563eb; }
-        .btn-success { background: #16a34a; }
+        .q-text { font-size: 0.92rem; font-weight: 600; line-height: 1.4; color: #0f172a; margin-bottom: 8px; word-break: keep-all; flex-shrink: 0; }
+        
+        .q-img {
+            max-width: 100%;
+            max-height: 130px;
+            object-fit: contain;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            margin: 0 auto 8px auto;
+            display: block;
+            flex-shrink: 0;
+        }
+
+        .kw-highlight { 
+            background: #fef08a; 
+            color: #854d0e; 
+            font-weight: 800; 
+            padding: 1px 3px; 
+            border-radius: 3px; 
+        }
+
+        .memorize-options-list { display: flex; flex-direction: column; gap: 5px; margin-top: 4px; }
+        
+        .mem-opt-item { 
+            padding: 7px 9px; 
+            border: 1px solid #e2e8f0; 
+            background: #f8fafc; 
+            border-radius: 6px; 
+            font-size: 0.82rem; 
+            font-weight: 400; 
+            line-height: 1.3; 
+            word-break: keep-all; 
+            color: #94a3b8; 
+            opacity: 0.5;
+            transition: all 0.15s ease;
+        }
+
+        .mem-opt-item.is-answer { 
+            background-color: #dcfce7 !important; 
+            border: 1.5px solid #22c55e !important; 
+            color: #15803d !important; 
+            font-weight: 700 !important; 
+            opacity: 1 !important;
+            box-shadow: 0 2px 4px rgba(34,197,94,0.12); 
+        }
+
+        .options-list { display: flex; flex-direction: column; gap: 5px; margin-top: auto; }
+        .opt-btn { width: 100%; text-align: left; padding: 7px 9px; border: 1.5px solid #cbd5e1; background: #f8fafc; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; line-height: 1.3; word-break: keep-all; transition: all 0.15s; color: #334155; }
+        
+        .opt-btn.correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #15803d !important; font-weight: 700; }
+        .opt-btn.wrong { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #b91c1c !important; font-weight: 700; }
+
+        .btn-group { display: flex; gap: 6px; margin-top: 8px; flex-shrink: 0; }
+        .btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; font-size: 0.9rem; cursor: pointer; text-align: center; }
+        .btn-submit { background-color: #2563eb; color: #ffffff; }
+        
+        #loading { text-align: center; margin: auto; padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .file-select-btn { padding: 8px 16px; background: #2563eb; color: #ffffff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.85rem; cursor: pointer; display: inline-block; }
+
+        .result-screen { text-align: center; margin: auto; }
+        .result-score { font-size: 2rem; font-weight: 800; margin: 8px 0; }
+        .pass { color: #16a34a; }
+        .fail { color: #dc2626; }
+        .restart-btn { padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.9rem; cursor: pointer; margin-top: 8px; }
+        
+        .exam-setup-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.8rem; }
+        .exam-setup-group select, .exam-setup-group input { padding: 3px 5px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <!-- Header -->
-    <div class="app-header">
-        <div class="app-title">🚗 운전면허 필기 마스터 💡</div>
+<div class="container">
+    <div class="header-title">
+        <h1>🚗 운전면허 필기 마스터</h1>
+        <button class="help-btn" onclick="showSwipeGuide(true)" title="스와이프 안내 다시보기">💡</button>
     </div>
 
-    <!-- Mode Tabs -->
-    <div class="mode-tabs">
-        <button class="tab-btn active" id="tabStudy" onclick="switchMode('study')">⚡ 암기장 모드</button>
+    <div class="tab-group">
+        <button class="tab-btn active" id="tabMemorize" onclick="switchMode('memorize')">⚡ 암기장 모드</button>
         <button class="tab-btn" id="tabExam" onclick="switchMode('exam')">📝 모의고사 모드</button>
     </div>
 
-    <!-- Top Controls -->
-    <div class="top-bar">
-        <div class="jump-box" id="jumpContainer">
-            <span>문제 번호:</span>
-            <input type="number" id="jumpInput" min="1" max="1000">
-            <button class="btn-sm" onclick="jumpToQuestion()">이동</button>
+    <div class="top-nav" id="topNav">
+        <div id="navLeft" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <div>
+                <span>문제 번호: </span>
+                <input type="number" id="qInput" min="1" value="1">
+                <button onclick="jumpToQ()">이동</button>
+            </div>
+            <label class="hide-toggle-label">
+                <input type="checkbox" id="hideMemorizedCheck" onchange="toggleHideMemorized()">
+                외운 문제 제외
+            </label>
         </div>
-        <label class="checkbox-label" id="hideDoneContainer">
-            <input type="checkbox" id="hideDoneCb" onchange="toggleHideDone()">
-            <span>외운 문제 제외</span>
-        </label>
-        <div id="timerDisplay" style="display:none; font-weight: 800; color: #dc2626; font-size: 0.9rem;">
-            ⏱️ <span id="timerText">40:00</span>
+
+        <div id="examStartBox" class="exam-setup-group" style="display:none;">
+            <div>
+                <strong>필터:</strong>
+                <select id="examFilterSelect" style="color: #2563eb;">
+                    <option value="all" selected>전체 문제</option>
+                    <option value="unmemorized">미완료 문제만</option>
+                    <option value="memorized">⭐ 외운 문제만 (복습)</option>
+                </select>
+            </div>
+            <div>
+                <strong>범위:</strong>
+                <input type="number" id="rangeStart" min="1" value="1"> ~ 
+                <input type="number" id="rangeEnd" min="1" value="100">
+            </div>
+            <div>
+                <strong>문항:</strong>
+                <select id="examCountSelect">
+                    <option value="5">5문제</option>
+                    <option value="10">10문제</option>
+                    <option value="20">20문제</option>
+                    <option value="40" selected>40문제</option>
+                </select>
+            </div>
+            <button onclick="startNewExam()" style="padding: 3px 8px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">🚀 시작</button>
         </div>
+
+        <div class="timer-box" id="timerBox" style="display:none;">⏱️ 40:00</div>
+        <span id="totalIdx">0 / 0</span>
     </div>
 
-    <!-- Progress Info -->
-    <div class="progress-info">
-        <span id="progressText">1 / 1000</span>
-    </div>
-
-    <!-- Card Wrapper -->
-    <div class="card-wrapper" id="cardWrapper">
+    <div class="card-wrapper">
         <div class="card" id="cardBox">
-            <!-- Dynamic Content -->
-        </div>
+            <div id="loading">
+                <div style="font-weight: bold; color: #2563eb; line-height: 1.4; font-size: 0.9rem;">
+                    🔄 문제 데이터를 불러오는 중입니다...
+                </div>
+            </div>
+            
+            <div id="quizContent" style="display:none; flex-direction: column;">
+                <div class="q-header" id="qHeader">
+                    <span style="font-size:0.75rem; font-weight:bold; color:#64748b;" id="qCategory">문제</span>
+                    <label class="memorized-check">
+                        <input type="checkbox" id="itemMemorizedCheck" onchange="toggleItemMemorized(this.checked)">
+                        완료 (외움)
+                    </label>
+                </div>
 
-        <div class="result-container" id="resultContent">
-            <div class="result-title">모의고사 결과</div>
-            <div class="result-score" id="resultScore">0점</div>
-            <div class="result-status" id="resultStatus">불합격</div>
-            <p style="font-size:0.85rem; color:#64748b; margin-bottom:16px;">수고하셨습니다! 오답을 확인하고 다시 도전해보세요.</p>
-            <button class="btn-action btn-primary" style="width:100%;" onclick="switchMode('exam')">다시 풀기</button>
+                <div class="q-text" id="qText"></div>
+                <img id="qImage" class="q-img" src="" alt="문제 이미지" style="display: none;">
+
+                <div class="options-list" id="optList" style="display:none;"></div>
+                <div class="memorize-options-list" id="memOptList" style="display:none;"></div>
+            </div>
+
+            <div id="resultContent" class="result-screen" style="display:none;">
+                <div style="font-size: 0.95rem; font-weight: bold; color: #475569;">시험 결과</div>
+                <div id="scoreText" class="result-score">0점</div>
+                <div id="passText" style="font-size: 1rem; font-weight: bold; margin-bottom: 6px;"></div>
+                <div id="resultDetail" style="color: #64748b; font-size: 0.85rem;"></div>
+                <button class="restart-btn" onclick="switchMode('exam')">🔄 다시 도전하기</button>
+            </div>
         </div>
     </div>
 
-    <!-- Exam Submit Bar -->
-    <div class="exam-controls" id="examBar" style="display: none;">
-        <button class="btn-action btn-success" id="examStartBtn" onclick="startExam()">🚀 모의고사 시작 (40문제)</button>
-        <button class="btn-action btn-primary" id="examSubmitBtn" style="display:none;" onclick="submitExam()">제출하기</button>
+    <div class="toast-msg" id="toastMsg">👆 터치/드래그 또는 방향키(↑/↓)로 스와이프 하세요</div>
+
+    <div class="btn-group" id="btnGroup" style="display:none;">
+        <button class="btn btn-submit" id="submitBtn" onclick="submitExam()">시험 제출</button>
     </div>
 </div>
 
 <script>
-    // Data Storage & State Variables
-    let db = [];
-    let filteredDb = [];
-    let currentMode = 'study'; // 'study' | 'exam'
-    let currentIndex = 0;
-    let hideDone = false;
-    let examAnswers = {}; // { qNum: [selectedIndices] }
-    let isExamStarted = false;
-    let timerInterval = null;
-    let timeLeft = 2400; // 40분 (초 단위)
+    let db = []; 
+    let activeDb = []; 
+    let examDb = []; 
 
-    // Touch & Animation Variables
+    let memorizeIdx = 0;
+    let examIdx = 0;
+    let currentMode = 'memorize'; 
+    let isExamStarted = false;
+    let isAnimating = false;
+    let hideMemorized = false;
+    
+    let memorizedSet = new Set(JSON.parse(localStorage.getItem('memorized_questions') || '[]'));
+
+    let userAnswers = {}; 
+    let timerInterval = null;
+    let timeLeft = 2400; 
+
     let dragStartY = 0;
     let dragEndY = 0;
-    let isAnimating = false;
+    let isMouseDown = false;
 
-    // Load Data
-    async function loadData() {
-        try {
-            const res = await fetch('questions_full.json');
-            db = await res.json();
-            filterData();
-            renderCard();
-        } catch (e) {
-            console.error("데이터 로드 실패:", e);
-            document.getElementById('cardBox').innerHTML = "<p style='padding:20px; text-align:center;'>데이터를 불러오는데 실패했습니다.</p>";
+    const cardBox = document.getElementById('cardBox');
+
+    window.addEventListener('DOMContentLoaded', () => {
+        loadJsonData();
+    });
+
+    function loadJsonData() {
+        fetch('./questions_full.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('네트워크 응답이 올바르지 않습니다.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                initQuiz(data);
+            })
+            .catch(error => {
+                console.error('JSON 파일 로드 실패:', error);
+                document.getElementById('loading').innerHTML = `
+                    <div style="font-weight: bold; color: #ef4444; line-height: 1.4; font-size: 0.85rem;">
+                        ⚠️ questions_full.json 데이터를 불러오지 못했습니다.<br>수동으로 선택해 주세요.
+                    </div>
+                    <button class="file-select-btn" onclick="triggerFileInput()">📁 파일 선택</button>
+                    <input type="file" id="jsonFileInput" accept=".json" onchange="handleFileUpload(event)" style="display: none;">
+                `;
+            });
+    }
+
+    cardBox.addEventListener('touchstart', e => {
+        dragStartY = e.changedTouches[0].screenY;
+    }, false);
+
+    cardBox.addEventListener('touchend', e => {
+        dragEndY = e.changedTouches[0].screenY;
+        handleSwipe();
+    }, false);
+
+    cardBox.addEventListener('mousedown', e => {
+        isMouseDown = true;
+        dragStartY = e.screenY;
+    });
+
+    cardBox.addEventListener('mouseup', e => {
+        if (!isMouseDown) return;
+        isMouseDown = false;
+        dragEndY = e.screenY;
+        handleSwipe();
+    });
+
+    cardBox.addEventListener('mouseleave', e => {
+        if (isMouseDown) {
+            isMouseDown = false;
+            dragEndY = e.screenY;
+            handleSwipe();
+        }
+    });
+
+    document.addEventListener('keydown', e => {
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT')) return;
+
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            swipeTo('prev');
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            swipeTo('next');
+        }
+    });
+
+    function showSwipeGuide(force = false) {
+        if (force || !localStorage.getItem('swipe_guide_shown')) {
+            const toast = document.getElementById('toastMsg');
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+            localStorage.setItem('swipe_guide_shown', 'true');
         }
     }
 
-    function filterData() {
-        if (currentMode === 'study') {
-            const doneSet = new Set(JSON.parse(localStorage.getItem('done_questions') || '[]'));
-            if (hideDone) {
-                filteredDb = db.filter(q => !doneSet.has(q.num));
+    function handleSwipe() {
+        const isResultVisible = document.getElementById('resultContent').style.display !== 'none';
+        if (!db.length || isAnimating || isResultVisible) return;
+        if (currentMode === 'exam' && !isExamStarted) return;
+
+        const threshold = 40; 
+        const diff = dragEndY - dragStartY;
+
+        if (Math.abs(diff) > threshold) {
+            if (diff < 0) swipeTo('next');
+            else swipeTo('prev');
+        }
+    }
+
+    function swipeTo(dir) {
+        const list = getCurList();
+        const curIdx = getCurIdx();
+
+        if (dir === 'next' && curIdx >= list.length - 1) {
+            if (currentMode === 'exam') {
+                submitExam();
             } else {
-                filteredDb = [...db];
+                alert('마지막 문제입니다.');
             }
+            return;
+        }
+        if (dir === 'prev' && curIdx <= 0) return;
+
+        isAnimating = true;
+
+        const outClass = dir === 'next' ? 'slide-out-up' : 'slide-out-down';
+        const inClass = dir === 'next' ? 'slide-in-from-bottom' : 'slide-in-from-top';
+
+        cardBox.classList.add(outClass);
+
+        setTimeout(() => {
+            if (dir === 'next') setCurIdx(curIdx + 1);
+            else setCurIdx(curIdx - 1);
+            loadQ();
+
+            cardBox.style.transition = 'none';
+            cardBox.classList.remove(outClass);
+            cardBox.classList.add(inClass);
+
+            cardBox.offsetHeight; 
+
+            cardBox.style.transition = 'transform 0.25s ease-in-out, opacity 0.25s ease-in-out';
+            cardBox.classList.remove(inClass);
+
+            setTimeout(() => { isAnimating = false; }, 250);
+        }, 200);
+    }
+
+    function triggerFileInput() {
+        const input = document.getElementById('jsonFileInput');
+        if (input) input.click();
+    }
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                initQuiz(data);
+            } catch (err) {
+                alert("올바른 JSON 파일이 아닙니다.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function initQuiz(data) {
+        db = data.map((item, idx) => ({ ...item, _id: item.id || idx + 1 }));
+        document.getElementById('loading').style.display = 'none';
+
+        if (db.length) {
+            document.getElementById('rangeStart').value = 1;
+            document.getElementById('rangeEnd').value = db.length;
+        }
+
+        updateActiveDb();
+        switchMode(currentMode); 
+        showSwipeGuide();
+    }
+
+    function updateActiveDb() {
+        if (hideMemorized) {
+            activeDb = db.filter(item => !memorizedSet.has(item._id));
+        } else {
+            activeDb = [...db];
+        }
+    }
+
+    function toggleHideMemorized() {
+        hideMemorized = document.getElementById('hideMemorizedCheck').checked;
+        updateActiveDb();
+        memorizeIdx = 0;
+        loadQ();
+    }
+
+    function toggleItemMemorized(isChecked) {
+        const list = getCurList();
+        if (!list.length) return;
+
+        const currentItem = list[getCurIdx()];
+        if (!currentItem) return;
+
+        if (isChecked) {
+            memorizedSet.add(currentItem._id);
+        } else {
+            memorizedSet.delete(currentItem._id);
+        }
+
+        localStorage.setItem('memorized_questions', JSON.stringify(Array.from(memorizedSet)));
+
+        if (currentMode === 'memorize' && hideMemorized && isChecked) {
+            updateActiveDb();
+            if (memorizeIdx >= activeDb.length) memorizeIdx = Math.max(0, activeDb.length - 1);
+            loadQ();
         }
     }
 
     function switchMode(mode) {
         currentMode = mode;
-        document.getElementById('tabStudy').classList.toggle('active', mode === 'study');
+        document.getElementById('tabMemorize').classList.toggle('active', mode === 'memorize');
         document.getElementById('tabExam').classList.toggle('active', mode === 'exam');
-        
-        document.getElementById('jumpContainer').style.display = mode === 'study' ? 'flex' : 'none';
-        document.getElementById('hideDoneContainer').style.display = mode === 'study' ? 'flex' : 'none';
-        document.getElementById('timerDisplay').style.display = mode === 'exam' ? 'block' : 'none';
-        document.getElementById('examBar').style.display = mode === 'exam' ? 'flex' : 'none';
+
+        const navLeft = document.getElementById('navLeft');
+        const examStartBox = document.getElementById('examStartBox');
+        const timerBox = document.getElementById('timerBox');
+        const btnGroup = document.getElementById('btnGroup');
 
         document.getElementById('resultContent').style.display = 'none';
-        document.getElementById('cardBox').style.display = 'flex';
 
-        if (mode === 'study') {
+        if (mode === 'memorize') {
             clearInterval(timerInterval);
-            isExamStarted = false;
-            filterData();
-            currentIndex = 0;
-            renderCard();
+            navLeft.style.display = 'flex';
+            examStartBox.style.display = 'none';
+            timerBox.style.display = 'none';
+            btnGroup.style.display = 'none';
+
+            if (db.length) {
+                document.getElementById('quizContent').style.display = 'flex';
+                document.getElementById('qInput').max = db.length;
+                updateActiveDb();
+                loadQ();
+            }
         } else {
-            // Exam Setup
-            isExamStarted = false;
-            document.getElementById('examStartBtn').style.display = 'block';
-            document.getElementById('examSubmitBtn').style.display = 'none';
-            document.getElementById('cardBox').innerHTML = `<div style="margin:auto; text-align:center; padding:20px;">
-                <h3 style="margin-bottom:10px;">📝 모의고사 안내</h3>
-                <p style="font-size:0.85rem; color:#475569; line-height:1.4;">
-                    실제 시험과 동일하게 무작위 <b>40문항</b>이 출제됩니다.<br>
-                    제한시간은 <b>40분</b>이며, 버튼을 누르면 시작됩니다.
-                </p>
-            </div>`;
-            document.getElementById('progressText').innerText = "0 / 40";
+            navLeft.style.display = 'none';
+
+            if (!isExamStarted) {
+                examStartBox.style.display = 'flex';
+                timerBox.style.display = 'none';
+                btnGroup.style.display = 'none';
+                document.getElementById('quizContent').style.display = 'none';
+                document.getElementById('totalIdx').innerText = '0 / 0';
+            } else {
+                examStartBox.style.display = 'none';
+                timerBox.style.display = 'block';
+                btnGroup.style.display = 'flex';
+                document.getElementById('quizContent').style.display = 'flex';
+                loadQ();
+            }
         }
     }
 
-    function startExam() {
-        isExamStarted = true;
-        examAnswers = {};
-        // Random 40 Selection
-        const shuffled = [...db].sort(() => 0.5 - Math.random());
-        filteredDb = shuffled.slice(0, 40);
-        currentIndex = 0;
+    function getCurIdx() {
+        return currentMode === 'memorize' ? memorizeIdx : examIdx;
+    }
 
-        document.getElementById('examStartBtn').style.display = 'none';
-        document.getElementById('examSubmitBtn').style.display = 'block';
+    function setCurIdx(val) {
+        if (currentMode === 'memorize') memorizeIdx = val;
+        else examIdx = val;
+    }
 
-        // Timer Start
+    function getCurList() {
+        return currentMode === 'memorize' ? activeDb : examDb;
+    }
+
+    function highlightKeywords(text) {
+        if (!text) return "";
+        let html = text;
+
+        const keywords = [
+            '2가지', '두 가지', '두가지', '3가지', 
+            '틀린 것은', '틀린것은', 
+            '가장 적절하지 않은', '적절하지 않은', '적절하지않은',
+            '아닌 것은', '아닌것은', 
+            '올바르지 않은', '올바르지않은',
+            '바르지 않은', '바르지않은',
+            '불가능한', '가장 큰 이유', '과태료', '벌점', '우선순위', '안전거리', '옳지 않은', '옳지않은'
+        ];
+
+        keywords.forEach(kw => {
+            const reg = new RegExp(kw, 'g');
+            html = html.replace(reg, `<span class="kw-highlight">${kw}</span>`);
+        });
+
+        return html;
+    }
+
+    // --- 상태 변수 및 설정 (기존에 선언되어 있는 변수들과 연동됩니다) ---
+// (※ 기존 코드 상단의 변수 선언부, 이벤트 리스너 등은 그대로 두고 아래 loadQ 함수만 교체하셔도 무방합니다.)
+
+function loadQ() {
+    const list = getCurList();
+    
+    if (!list || !list.length) {
+        if (currentMode === 'memorize' && hideMemorized) {
+            document.getElementById('qText').innerHTML = "🎉 모든 문제를 완료(외움) 처리하셨습니다!";
+            document.getElementById('qImage').style.display = 'none';
+            document.getElementById('memOptList').style.display = 'none';
+            document.getElementById('totalIdx').innerText = '0 / 0';
+            document.getElementById('qHeader').style.display = 'none';
+            return;
+        }
+        return;
+    }
+
+    document.getElementById('qHeader').style.display = 'flex';
+
+    const curIdx = getCurIdx();
+    const item = list[curIdx];
+
+    document.getElementById('qCategory').innerText = item.category || '문제';
+    document.getElementById('itemMemorizedCheck').checked = memorizedSet.has(item._id);
+    document.getElementById('qText').innerHTML = highlightKeywords(item.question);
+
+    const imgUrl = item.image_url || item.image || item.img || null;
+    const qImageEl = document.getElementById('qImage');
+    if (imgUrl) {
+        qImageEl.src = imgUrl;
+        qImageEl.style.display = 'block';
+    } else {
+        qImageEl.src = '';
+        qImageEl.style.display = 'none';
+    }
+
+    document.getElementById('qInput').value = item._id; 
+    document.getElementById('totalIdx').innerText = `${curIdx + 1} / ${list.length}`;
+    document.getElementById('cardBox').scrollTop = 0;
+
+    const optList = document.getElementById('optList');
+    const memOptList = document.getElementById('memOptList');
+    let formattedOptions = item.options || [];
+
+    // 1. 암기장 모드
+    if (currentMode === 'memorize') {
+        optList.style.display = 'none';
+        memOptList.style.display = 'flex';
+        memOptList.innerHTML = '';
+
+        formattedOptions.forEach((optText, index) => {
+            const optNum = index + 1;
+            const optDiv = document.createElement('div');
+            const isCorrect = item.answers.includes(optNum);
+            
+            optDiv.className = `mem-opt-item ${isCorrect ? 'is-answer' : ''}`;
+            // 보기 번호(optNum) 출력 반영 완료
+            optDiv.innerText = `${isCorrect ? '✓ ' : ''}${optNum}. ${optText}`;
+            memOptList.appendChild(optDiv);
+        });
+
+    } else {
+        // 2. 모의고사(풀이) 모드
+        memOptList.style.display = 'none';
+        optList.style.display = 'flex';
+        optList.innerHTML = '';
+
+        const selectedArr = userAnswers[curIdx] || [];
+        const requiredCount = item.answers.length;
+        const isDone = selectedArr.length >= requiredCount;
+
+        formattedOptions.forEach((optText, index) => {
+            const optNum = index + 1;
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn';
+            // 보기 번호(optNum) 출력 반영 완료
+            btn.innerText = `${optNum}. ${optText}`;
+
+            if (selectedArr.includes(optNum)) {
+                if (item.answers.includes(optNum)) {
+                    btn.classList.add('correct');
+                } else {
+                    btn.classList.add('wrong');
+                }
+            }
+
+            if (isDone) {
+                btn.disabled = true;
+                if (item.answers.includes(optNum)) {
+                    btn.classList.add('correct');
+                }
+            } else {
+                if (selectedArr.includes(optNum)) {
+                    btn.disabled = true;
+                } else {
+                    btn.onclick = () => selectOption(optNum);
+                }
+            }
+
+            optList.appendChild(btn);
+        });
+    }
+}
+
+    function selectOption(selectedNum) {
+        const curIdx = getCurIdx();
+        if (!userAnswers[curIdx]) userAnswers[curIdx] = [];
+        if (!userAnswers[curIdx].includes(selectedNum)) userAnswers[curIdx].push(selectedNum);
+        loadQ();
+    }
+
+    function jumpToQ() {
+        const targetId = parseInt(document.getElementById('qInput').value);
+        const list = getCurList();
+
+        const foundIdx = list.findIndex(item => item._id === targetId);
+
+        if (foundIdx !== -1) {
+            setCurIdx(foundIdx);
+            loadQ();
+        } else {
+            if (hideMemorized && memorizedSet.has(targetId)) {
+                alert("해당 문제는 '외운 문제'에 포함되어 있어 제외 상태입니다. 스위치를 꺼주세요.");
+            } else {
+                alert(`1부터 ${db.length} 사이의 올바른 문제 번호를 입력해주세요.`);
+            }
+        }
+    }
+
+    function startNewExam() {
+        if (!db.length) return;
+
+        const filterType = document.getElementById('examFilterSelect').value;
+        const startInput = parseInt(document.getElementById('rangeStart').value);
+        const endInput = parseInt(document.getElementById('rangeEnd').value);
+
+        if (isNaN(startInput) || isNaN(endInput) || startInput < 1 || endInput > db.length || startInput > endInput) {
+            alert(`올바른 범위를 입력해주세요. (1 ~ ${db.length} 사이)`);
+            return;
+        }
+
+        let pool = db.slice(startInput - 1, endInput);
+
+        if (filterType === 'memorized') {
+            pool = pool.filter(item => memorizedSet.has(item._id));
+        } else if (filterType === 'unmemorized') {
+            pool = pool.filter(item => !memorizedSet.has(item._id));
+        }
+
+        const selectedCount = parseInt(document.getElementById('examCountSelect').value || 40);
+
+        if (pool.length < selectedCount) {
+            if (filterType === 'memorized') {
+                alert(`선택한 범위 내 '외운 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)\n문제 암기를 더 진행하신 후 도전해 보세요!`);
+            } else {
+                alert(`선택한 조건의 문제 수가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)`);
+            }
+            return;
+        }
+
+        const shuffled = [...pool].sort(() => 0.5 - Math.random());
+        examDb = shuffled.slice(0, selectedCount);
+
+        examIdx = 0;
+        userAnswers = {};
         timeLeft = 2400;
-        updateTimerDisplay();
+        isExamStarted = true;
+
+        document.getElementById('examStartBox').style.display = 'none';
+        document.getElementById('timerBox').style.display = 'block';
+        document.getElementById('btnGroup').style.display = 'flex';
+        document.getElementById('resultContent').style.display = 'none';
+        document.getElementById('quizContent').style.display = 'flex';
+
+        startTimer();
+        loadQ();
+    }
+
+    function startTimer() {
         clearInterval(timerInterval);
         timerInterval = setInterval(() => {
-            timeLeft--;
-            updateTimerDisplay();
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
+                alert("시험 시간이 종료되었습니다.");
                 submitExam();
+            } else {
+                timeLeft--;
+                updateTimerDisplay();
             }
         }, 1000);
-
-        renderCard();
     }
 
     function updateTimerDisplay() {
         const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
         const s = (timeLeft % 60).toString().padStart(2, '0');
-        document.getElementById('timerText').innerText = `${m}:${s}`;
-    }
-
-    function toggleDone(qNum) {
-        let doneSet = new Set(JSON.parse(localStorage.getItem('done_questions') || '[]'));
-        if (doneSet.has(qNum)) {
-            doneSet.delete(qNum);
-        } else {
-            doneSet.add(qNum);
-        }
-        localStorage.setItem('done_questions', JSON.stringify([...doneSet]));
-        if (hideDone && currentMode === 'study') {
-            filterData();
-            if (currentIndex >= filteredDb.length) currentIndex = Math.max(0, filteredDb.length - 1);
-        }
-        renderCard();
-    }
-
-    function toggleHideDone() {
-        hideDone = document.getElementById('hideDoneCb').checked;
-        filterData();
-        currentIndex = 0;
-        renderCard();
-    }
-
-    function jumpToQuestion() {
-        const val = parseInt(document.getElementById('jumpInput').value);
-        if (isNaN(val)) return;
-        const targetIdx = filteredDb.findIndex(q => q.num === val);
-        if (targetIdx !== -1) {
-            currentIndex = targetIdx;
-            renderCard();
-        } else {
-            alert("해당하는 문제 번호를 찾을 수 없습니다.");
-        }
-    }
-
-    function handleOptionSelect(qNum, optIdx, isMulti) {
-        if (currentMode === 'study') return; // 암기장 모드에서는 무시
-
-        if (!examAnswers[qNum]) examAnswers[qNum] = [];
-        let list = examAnswers[qNum];
-
-        if (isMulti) {
-            if (list.includes(optIdx)) {
-                examAnswers[qNum] = list.filter(i => i !== optIdx);
-            } else {
-                list.push(optIdx);
-            }
-        } else {
-            examAnswers[qNum] = [optIdx];
-        }
-        renderCard();
-    }
-
-    function renderCard() {
-        const cardBox = document.getElementById('cardBox');
-        cardBox.scrollTop = 0; // 카드 바꿀 때 스크롤 상단 리셋
-
-        if (!filteredDb.length) {
-            cardBox.innerHTML = "<div style='margin:auto; text-align:center;'>표시할 문제가 없습니다.</div>";
-            document.getElementById('progressText').innerText = "0 / 0";
-            return;
-        }
-
-        const q = filteredDb[currentIndex];
-        const doneSet = new Set(JSON.parse(localStorage.getItem('done_questions') || '[]'));
-        const isDone = doneSet.has(q.num);
-
-        document.getElementById('progressText').innerText = `${currentIndex + 1} / ${filteredDb.length}`;
-
-        // 문제 텍스트 강조 처리
-        let formattedQText = q.question.replace(/(잘못된|올바른|맞는|아닌|없는|2가지)/g, '<span class="highlight">$1</span>');
-
-        // 보기 렌더링
-        let optionsHtml = '';
-        const userSelected = examAnswers[q.num] || [];
-
-        q.options.forEach((opt, idx) => {
-            let className = 'option-item';
-            let checkIcon = '';
-
-            if (currentMode === 'study') {
-                if (q.answers.includes(idx + 1)) {
-                    className += ' correct';
-                    checkIcon = '✓ ';
-                }
-            } else { // Exam Mode
-                if (userSelected.includes(idx + 1)) {
-                    className += ' selected';
-                }
-            }
-
-            optionsHtml += `
-                <div class="${className}" onclick="handleOptionSelect(${q.num}, ${idx + 1}, ${q.answers.length > 1})">
-                    <span>${checkIcon}${opt}</span>
-                </div>
-            `;
-        });
-
-        // 이미지 HTML
-        let imgHtml = q.image ? `<div class="img-container"><img src="${q.image}" alt="문제 이미지"></div>` : '';
-
-        // 해설 HTML (암기장에서만 노출)
-        let expHtml = (currentMode === 'study' && q.explanation) ? `<div class="exp-box">💡 <b>해설:</b> ${q.explanation}</div>` : '';
-
-        // 체크박스 HTML
-        let doneCbHtml = (currentMode === 'study') ? `
-            <label class="checkbox-label" style="font-size:0.75rem;">
-                <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleDone(${q.num})">
-                <span style="color:${isDone ? '#16a34a' : '#64748b'}; font-weight:700;">완료 (외움)</span>
-            </label>
-        ` : '';
-
-        cardBox.innerHTML = `
-            <div class="card-header">
-                <span class="badge">문제</span>
-                ${doneCbHtml}
-            </div>
-            <div class="q-text"><b>${q.num}.</b> ${formattedQText}</div>
-            ${imgHtml}
-            <div class="options-list">
-                ${optionsHtml}
-            </div>
-            ${expHtml}
-        `;
-    }
-
-    function swipeTo(dir) {
-        if (isAnimating) return;
-        const cardBox = document.getElementById('cardBox');
-
-        if (dir === 'next' && currentIndex < filteredDb.length - 1) {
-            isAnimating = true;
-            cardBox.style.transform = 'translateY(-100%)';
-            cardBox.style.opacity = '0';
-            setTimeout(() => {
-                currentIndex++;
-                renderCard();
-                cardBox.style.transform = 'translateY(100%)';
-                setTimeout(() => {
-                    cardBox.style.transform = 'translateY(0)';
-                    cardBox.style.opacity = '1';
-                    isAnimating = false;
-                }, 20);
-            }, 200);
-        } else if (dir === 'prev' && currentIndex > 0) {
-            isAnimating = true;
-            cardBox.style.transform = 'translateY(100%)';
-            cardBox.style.opacity = '0';
-            setTimeout(() => {
-                currentIndex--;
-                renderCard();
-                cardBox.style.transform = 'translateY(-100%)';
-                setTimeout(() => {
-                    cardBox.style.transform = 'translateY(0)';
-                    cardBox.style.opacity = '1';
-                    isAnimating = false;
-                }, 20);
-            }, 200);
-        }
+        document.getElementById('timerBox').innerText = `⏱️ ${m}:${s}`;
     }
 
     function submitExam() {
+        const totalExamQ = examDb.length;
+        if (Object.keys(userAnswers).length < totalExamQ) {
+            if (!confirm(`아직 안 푼 문제가 있습니다. 정말 제출하시겠습니까?`)) return;
+        }
+
         clearInterval(timerInterval);
-        let score = 0;
-        
-        filteredDb.forEach(q => {
-            const userAns = (examAnswers[q.num] || []).sort().join(',');
-            const realAns = [...q.answers].sort().join(',');
-            if (userAns === realAns && userAns !== '') {
-                score += 2.5; // 100점 만점 기준 (40문제)
+        isExamStarted = false;
+
+        let correctCount = 0;
+        examDb.forEach((item, idx) => {
+            const userAnsArr = userAnswers[idx] || [];
+            if (item.answers.length === userAnsArr.length && item.answers.every(a => userAnsArr.includes(a))) {
+                correctCount++;
             }
         });
 
-        document.getElementById('cardBox').style.display = 'none';
-        document.getElementById('resultContent').style.display = 'flex';
-        document.getElementById('resultScore').innerText = `${score}점`;
+        const score = Math.round((correctCount / totalExamQ) * 100);
 
-        const isPass = score >= 60; // 2종 기준 보통 60점 이상 합격
-        const statusEl = document.getElementById('resultStatus');
-        statusEl.innerText = isPass ? "합격 🎉" : "불합격 😭";
-        statusEl.className = `result-status ${isPass ? 'pass' : 'fail'}`;
-    }
+        document.getElementById('quizContent').style.display = 'none';
+        document.getElementById('btnGroup').style.display = 'none';
+        document.getElementById('timerBox').style.display = 'none';
+        
+        const resultContent = document.getElementById('resultContent');
+        const scoreText = document.getElementById('scoreText');
+        const passText = document.getElementById('passText');
 
-    // Touch Event Handling (Swipe + Prevent konflikt with inner scroll)
-    const cardBox = document.getElementById('cardBox');
+        resultContent.style.display = 'block';
+        scoreText.innerText = `${score}점`;
 
-    cardBox.addEventListener('touchstart', (e) => {
-        dragStartY = e.touches[0].clientY;
-        dragEndY = dragStartY;
-    }, { passive: true });
-
-    cardBox.addEventListener('touchmove', (e) => {
-        dragEndY = e.touches[0].clientY;
-    }, { passive: true });
-
-    cardBox.addEventListener('touchend', () => {
-        handleSwipe();
-    });
-
-    function handleSwipe() {
-        const isResultVisible = document.getElementById('resultContent').style.display !== 'none';
-        if (!filteredDb.length || isAnimating || isResultVisible) return;
-        if (currentMode === 'exam' && !isExamStarted) return;
-
-        const threshold = 60; // 드래그 임계값
-        const diff = dragEndY - dragStartY;
-
-        // 💡 핵심: 카드가 위아래로 스크롤 중이면 스와이프를 막음
-        if (Math.abs(diff) > threshold) {
-            if (diff < 0) { // 손가락을 위로 쓸어올림 (다음 문제)
-                // 카드의 내부 스크롤이 바닥에 도착하지 않았으면 스와이프 차단하고 스크롤 수행
-                if (cardBox.scrollTop + cardBox.clientHeight < cardBox.scrollHeight - 5) {
-                    return;
-                }
-                swipeTo('next');
-            } else { // 손가락을 아래로 쓸어내림 (이전 문제)
-                // 카드가 맨 위 위치가 아니면 스와이프 차단
-                if (cardBox.scrollTop > 5) {
-                    return;
-                }
-                swipeTo('prev');
-            }
+        if (score >= 70) {
+            scoreText.className = 'result-score pass';
+            passText.className = 'pass';
+            passText.innerText = '🎉 1종/2종 보통 합격!';
+        } else if (score >= 60) {
+            scoreText.className = 'result-score pass';
+            passText.className = 'pass';
+            passText.innerText = '🎉 2종 보통 합격 (1종 불합격)';
+        } else {
+            scoreText.className = 'result-score fail';
+            passText.className = 'fail';
+            passText.innerText = '💥 불합격입니다.';
         }
-    }
 
-    // Init Execution
-    loadData();
+        document.getElementById('resultDetail').innerText = `총 ${totalExamQ}문제 중 ${correctCount}문제를 맞히셨습니다.`;
+    }
 </script>
+
 </body>
 </html>
