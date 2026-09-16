@@ -10,6 +10,8 @@ let isAnimating = false;
 let hideMemorized = true;
 
 let memorizedSet = new Set(JSON.parse(localStorage.getItem('memorized_questions') || '[]'));
+// 오답 노트 저장용 세트 (틀린 문제들의 _id 저장)
+let incorrectSet = new Set(JSON.parse(localStorage.getItem('incorrect_questions') || '[]'));
 
 let userAnswers = {}; 
 let timerInterval = null;
@@ -24,7 +26,6 @@ const cardBox = document.getElementById('cardBox');
 window.addEventListener('DOMContentLoaded', () => {
     loadJsonData();
 
-    // 입력창(문제 번호, 범위 시작/끝) 편의 기능 설정 (터치 시 비워지고, 포커스 아웃 시 빈칸이면 원복)
     ['qInput', 'rangeStart', 'rangeEnd'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -50,7 +51,6 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
 
 function loadJsonData() {
     fetch('./questions_full.json')
@@ -216,6 +216,7 @@ function initQuiz(data) {
     }
 
     updateActiveDb();
+    updateProgressBar();
     switchMode(currentMode); 
     showSwipeGuide();
 }
@@ -226,6 +227,18 @@ function updateActiveDb() {
     } else {
         activeDb = [...db];
     }
+}
+
+// 상단 진행률 바 및 수치 업데이트 함수
+function updateProgressBar() {
+    const total = db.length;
+    const memorizedCount = memorizedSet.size;
+    const percent = total > 0 ? Math.round((memorizedCount / total) * 100) : 0;
+
+    document.getElementById('memorizedCountText').innerText = memorizedCount;
+    document.getElementById('totalCountText').innerText = total;
+    document.getElementById('memorizedPercentText').innerText = `${percent}%`;
+    document.getElementById('progressBarFill').style.width = `${percent}%`;
 }
 
 function toggleHideMemorized() {
@@ -249,6 +262,7 @@ function toggleItemMemorized(isChecked) {
     }
 
     localStorage.setItem('memorized_questions', JSON.stringify(Array.from(memorizedSet)));
+    updateProgressBar(); // 체크 변경 시 진행률 바 동기화
 
     if (currentMode === 'memorize' && hideMemorized && isChecked) {
         updateActiveDb();
@@ -260,15 +274,14 @@ function toggleItemMemorized(isChecked) {
 function switchMode(mode) {
     if (currentMode === 'exam' && isExamStarted && mode === 'memorize') {
         const confirmLeave = confirm("⚠️ 진행 중이던 모의고사가 중단되고 초기화됩니다.\n정말 암기장으로 이동하시겠습니까?");
-        if (!confirmLeave) {
-            return; 
-        }
+        if (!confirmLeave) return; 
     }
 
     currentMode = mode;
     document.getElementById('tabMemorize').classList.toggle('active', mode === 'memorize');
     document.getElementById('tabExam').classList.toggle('active', mode === 'exam');
 
+    const progressSection = document.getElementById('progressSection');
     const navLeft = document.getElementById('navLeft');
     const examStartBox = document.getElementById('examStartBox');
     const timerBox = document.getElementById('timerBox');
@@ -282,6 +295,7 @@ function switchMode(mode) {
         clearInterval(timerInterval);
         userAnswers = {};
 
+        progressSection.style.display = 'block'; // 암기장 모드일 때만 진행률 바 노출
         navLeft.style.display = 'flex';
         examStartBox.style.display = 'none';
         timerBox.style.display = 'none';
@@ -295,9 +309,11 @@ function switchMode(mode) {
             document.getElementById('quizContent').style.display = 'flex';
             document.getElementById('qInput').max = db.length;
             updateActiveDb();
+            updateProgressBar();
             loadQ();
         }
     } else {
+        progressSection.style.display = 'none'; // 모의고사 모드에서는 진행률 바 숨김
         navLeft.style.display = 'none';
         totalIdxEl.style.display = 'none'; 
         resetExamSetup();
@@ -505,13 +521,18 @@ function startNewExam() {
         pool = pool.filter(item => memorizedSet.has(item._id));
     } else if (filterType === 'unmemorized') {
         pool = pool.filter(item => !memorizedSet.has(item._id));
+    } else if (filterType === 'incorrect') {
+        // 오답 노트 필터 적용
+        pool = pool.filter(item => incorrectSet.has(item._id));
     }
 
     const selectedCount = parseInt(document.getElementById('examCountSelect').value || 40);
 
     if (pool.length < selectedCount) {
-        if (filterType === 'memorized') {
-            alert(`선택한 범위 내 '외운 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)\n문제 암기를 더 진행하신 후 도전해 보세요!`);
+        if (filterType === 'incorrect') {
+            alert(`선택한 범위 내 '오답 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)\n틀린 문제가 아직 없거나 부족합니다!`);
+        } else if (filterType === 'memorized') {
+            alert(`선택한 범위 내 '외운 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)`);
         } else {
             alert(`선택한 조건의 문제 수가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)`);
         }
@@ -588,10 +609,20 @@ function submitExam() {
     let correctCount = 0;
     examDb.forEach((item, idx) => {
         const userAnsArr = userAnswers[idx] || [];
-        if (item.answers.length === userAnsArr.length && item.answers.every(a => userAnsArr.includes(a))) {
+        const isCorrect = item.answers.length === userAnsArr.length && item.answers.every(a => userAnsArr.includes(a));
+        
+        if (isCorrect) {
             correctCount++;
+            // 맞힌 문제는 오답 노트에서 제거 (맞았으므로 오답 탈출)
+            incorrectSet.delete(item._id);
+        } else {
+            // 틀린 문제는 오답 노트에 추가
+            incorrectSet.add(item._id);
         }
     });
+
+    // 오답노트 로컬스토리지 저장 갱신
+    localStorage.setItem('incorrect_questions', JSON.stringify(Array.from(incorrectSet)));
 
     const score = Math.round((correctCount / totalExamQ) * 100);
 
