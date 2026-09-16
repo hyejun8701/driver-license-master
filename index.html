@@ -587,10 +587,7 @@
         return html;
     }
 
-    // --- 상태 변수 및 설정 (기존에 선언되어 있는 변수들과 연동됩니다) ---
-// (※ 기존 코드 상단의 변수 선언부, 이벤트 리스너 등은 그대로 두고 아래 loadQ 함수만 교체하셔도 무방합니다.)
-
-function loadQ() {
+    function loadQ() {
     const list = getCurList();
     
     if (!list || !list.length) {
@@ -644,8 +641,8 @@ function loadQ() {
             const isCorrect = item.answers.includes(optNum);
             
             optDiv.className = `mem-opt-item ${isCorrect ? 'is-answer' : ''}`;
-            // 보기 번호(optNum) 출력 반영 완료
-            optDiv.innerText = `${isCorrect ? '✓ ' : ''}${optNum}. ${optText}`;
+            // 💡 데이터에 이미 번호가 포함되어 있으므로 optNum 추가 없이 optText만 출력
+            optDiv.innerText = `${isCorrect ? '✓ ' : ''}${optText}`;
             memOptList.appendChild(optDiv);
         });
 
@@ -663,8 +660,8 @@ function loadQ() {
             const optNum = index + 1;
             const btn = document.createElement('button');
             btn.className = 'opt-btn';
-            // 보기 번호(optNum) 출력 반영 완료
-            btn.innerText = `${optNum}. ${optText}`;
+            // 💡 데이터에 이미 번호가 포함되어 있으므로 optNum 추가 없이 optText만 출력
+            btn.innerText = optText;
 
             if (selectedArr.includes(optNum)) {
                 if (item.answers.includes(optNum)) {
