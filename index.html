@@ -40,12 +40,13 @@
                     <select id="examFilterSelect" class="custom-select" style="flex: 1;">
                         <option value="all" selected>전체 문제</option>
                         <option value="unmemorized">미완료 문제만</option>
-                        <option value="memorized">⭐ 외운 문제만</option>
+                        <option value="memorized">외운 문제만</option>
+                        <option value="wrong">틀린 문제만</option>
                     </select>
                 </div>
             </div>
 
-            <!-- 2행: 범위 설정 (필터/문항과 폭과 라인업을 맞춤) -->
+            <!-- 2행: 범위 설정 -->
             <div class="exam-setup-row">
                 <div class="setup-item" style="width: 100%;">
                     <span class="setup-label">범위</span>
@@ -107,7 +108,7 @@
                 <div class="options-list" id="optList" style="display:none;"></div>
                 <div class="memorize-options-list" id="memOptList" style="display:none;"></div>
 
-                <!-- 3. 이미지와 이미지 설명 가로 배치 영역 -->
+                <!-- 3. 이미지 영역 -->
                 <div id="qImgContainer" class="q-img-container" style="display: none;">
                     <img id="qImage" class="q-img" src="" alt="문제 이미지">
                     <div id="qImageDesc" class="q-img-desc"></div>

@@ -9,7 +9,12 @@ let isExamStarted = false;
 let isAnimating = false;
 let hideMemorized = true;
 
+// 로컬스토리지 연동
 let memorizedSet = new Set(JSON.parse(localStorage.getItem('memorized_questions') || '[]'));
+let wrongSet = new Set(JSON.parse(localStorage.getItem('wrong_questions') || '[]'));
+
+// 연속 정답/오답 카운트 트래킹 객체 { question_id: count } (양수: 연속 정답 수, 음수: 연속 오답 수)
+let streakMap = JSON.parse(localStorage.getItem('streak_map') || '{}');
 
 let userAnswers = {}; 
 let timerInterval = null;
@@ -24,7 +29,6 @@ const cardBox = document.getElementById('cardBox');
 window.addEventListener('DOMContentLoaded', () => {
     loadJsonData();
 
-    // 입력창(문제 번호, 범위 시작/끝) 편의 기능 설정 (터치 시 비워지고, 포커스 아웃 시 빈칸이면 원복)
     ['qInput', 'rangeStart', 'rangeEnd'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -46,11 +50,17 @@ window.addEventListener('DOMContentLoaded', () => {
                 if (el.value.trim() === '') {
                     el.value = originalVal;
                 }
+                if (id === 'rangeStart' || id === 'rangeEnd') {
+                    updateExamFilterCounts();
+                }
             });
+
+            if (id === 'rangeStart' || id === 'rangeEnd') {
+                el.addEventListener('input', updateExamFilterCounts);
+            }
         }
     });
 });
-
 
 function loadJsonData() {
     fetch('./questions_full.json')
@@ -121,13 +131,18 @@ document.addEventListener('keydown', e => {
     }
 });
 
+function showToast(msg, duration = 3000) {
+    const toast = document.getElementById('toastMsg');
+    toast.innerText = msg;
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, duration);
+}
+
 function showSwipeGuide(force = false) {
     if (force || !localStorage.getItem('swipe_guide_shown')) {
-        const toast = document.getElementById('toastMsg');
-        toast.classList.add('show');
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3000);
+        showToast('👈 좌우로 스와이프 또는 방향키(←/→)로 넘기세요');
         localStorage.setItem('swipe_guide_shown', 'true');
     }
 }
@@ -216,6 +231,7 @@ function initQuiz(data) {
     }
 
     updateActiveDb();
+    updateExamFilterCounts();
     switchMode(currentMode); 
     showSwipeGuide();
 }
@@ -225,6 +241,31 @@ function updateActiveDb() {
         activeDb = db.filter(item => !memorizedSet.has(item._id));
     } else {
         activeDb = [...db];
+    }
+}
+
+function updateExamFilterCounts() {
+    if (!db.length) return;
+
+    const startInput = parseInt(document.getElementById('rangeStart').value) || 1;
+    const endInput = parseInt(document.getElementById('rangeEnd').value) || db.length;
+
+    const validStart = Math.max(1, Math.min(startInput, db.length));
+    const validEnd = Math.max(validStart, Math.min(endInput, db.length));
+
+    const rangePool = db.slice(validStart - 1, validEnd);
+
+    const totalCount = rangePool.length;
+    const memorizedCount = rangePool.filter(item => memorizedSet.has(item._id)).length;
+    const unmemorizedCount = totalCount - memorizedCount;
+    const wrongCount = rangePool.filter(item => wrongSet.has(item._id)).length;
+
+    const selectEl = document.getElementById('examFilterSelect');
+    if (selectEl) {
+        selectEl.options[0].text = `전체 문제 (${totalCount}개)`;
+        selectEl.options[1].text = `미완료 문제만 (${unmemorizedCount}개)`;
+        selectEl.options[2].text = `외운 문제만 (${memorizedCount}개)`;
+        selectEl.options[3].text = `틀린 문제만 (${wrongCount}개)`;
     }
 }
 
@@ -244,11 +285,15 @@ function toggleItemMemorized(isChecked) {
 
     if (isChecked) {
         memorizedSet.add(currentItem._id);
+        streakMap[currentItem._id] = 0; // 수동 변경 시 연속 카운트 초기화
     } else {
         memorizedSet.delete(currentItem._id);
+        streakMap[currentItem._id] = 0;
     }
 
     localStorage.setItem('memorized_questions', JSON.stringify(Array.from(memorizedSet)));
+    localStorage.setItem('streak_map', JSON.stringify(streakMap));
+    updateExamFilterCounts();
 
     if (currentMode === 'memorize' && hideMemorized && isChecked) {
         updateActiveDb();
@@ -300,6 +345,7 @@ function switchMode(mode) {
     } else {
         navLeft.style.display = 'none';
         totalIdxEl.style.display = 'none'; 
+        updateExamFilterCounts();
         resetExamSetup();
     }
 }
@@ -505,13 +551,17 @@ function startNewExam() {
         pool = pool.filter(item => memorizedSet.has(item._id));
     } else if (filterType === 'unmemorized') {
         pool = pool.filter(item => !memorizedSet.has(item._id));
+    } else if (filterType === 'wrong') {
+        pool = pool.filter(item => wrongSet.has(item._id));
     }
 
     const selectedCount = parseInt(document.getElementById('examCountSelect').value || 40);
 
     if (pool.length < selectedCount) {
         if (filterType === 'memorized') {
-            alert(`선택한 범위 내 '외운 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)\n문제 암기를 더 진행하신 후 도전해 보세요!`);
+            alert(`선택한 범위 내 '외운 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)`);
+        } else if (filterType === 'wrong') {
+            alert(`선택한 범위 내 '틀린 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)\n모의고사를 더 진행하시면 틀린 문제가 오답노트에 자동 기록됩니다!`);
         } else {
             alert(`선택한 조건의 문제 수가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)`);
         }
@@ -554,6 +604,8 @@ function resetExamSetup() {
     document.getElementById('timerBox').style.display = 'none';
     document.getElementById('btnGroup').style.display = 'none';
     document.getElementById('quizContent').style.display = 'none';
+
+    updateExamFilterCounts();
 }
 
 function startTimer() {
@@ -586,12 +638,48 @@ function submitExam() {
     isExamStarted = false;
 
     let correctCount = 0;
+    let autoCompletedCount = 0;
+    let autoRemovedCount = 0;
+
     examDb.forEach((item, idx) => {
         const userAnsArr = userAnswers[idx] || [];
-        if (item.answers.length === userAnsArr.length && item.answers.every(a => userAnsArr.includes(a))) {
+        const isCorrect = item.answers.length === userAnsArr.length && item.answers.every(a => userAnsArr.includes(a));
+        const qId = item._id;
+
+        let curStreak = streakMap[qId] || 0;
+
+        if (isCorrect) {
             correctCount++;
+            wrongSet.delete(qId);
+
+            // 연속 정답 카운트 누적
+            curStreak = curStreak > 0 ? curStreak + 1 : 1;
+            streakMap[qId] = curStreak;
+
+            // 3회 이상 연속 정답 시 자동 암기 완료 처리
+            if (curStreak >= 3 && !memorizedSet.has(qId)) {
+                memorizedSet.add(qId);
+                autoCompletedCount++;
+            }
+        } else {
+            wrongSet.add(qId);
+
+            // 연속 오답 카운트 누적 (음수)
+            curStreak = curStreak < 0 ? curStreak - 1 : -1;
+            streakMap[qId] = curStreak;
+
+            // 3회 이상 연속 오답 시 자동 암기 해제 처리
+            if (curStreak <= -3 && memorizedSet.has(qId)) {
+                memorizedSet.delete(qId);
+                autoRemovedCount++;
+            }
         }
     });
+
+    localStorage.setItem('wrong_questions', JSON.stringify(Array.from(wrongSet)));
+    localStorage.setItem('memorized_questions', JSON.stringify(Array.from(memorizedSet)));
+    localStorage.setItem('streak_map', JSON.stringify(streakMap));
+    updateExamFilterCounts();
 
     const score = Math.round((correctCount / totalExamQ) * 100);
 
@@ -621,4 +709,13 @@ function submitExam() {
     }
 
     document.getElementById('resultDetail').innerText = `총 ${totalExamQ}문제 중 ${correctCount}문제를 맞히셨습니다.`;
+
+    // 자동 암기 완료/해제 토스트 알림 띄우기
+    if (autoCompletedCount > 0 && autoRemovedCount > 0) {
+        showToast(`🎉 ${autoCompletedCount}개 문제 자동 암기 완료! / ⚠️ ${autoRemovedCount}개 문제 암기 해제`, 4000);
+    } else if (autoCompletedCount > 0) {
+        showToast(`🎉 3회 연속 정답! ${autoCompletedCount}개 문제가 자동으로 암기 완료되었습니다.`, 4000);
+    } else if (autoRemovedCount > 0) {
+        showToast(`⚠️ 3회 연속 오답으로 ${autoRemovedCount}개 문제가 암기 목록에서 제외되었습니다.`, 4000);
+    }
 }

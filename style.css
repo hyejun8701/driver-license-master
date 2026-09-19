@@ -53,17 +53,17 @@ h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
     bottom: 16px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(15, 23, 42, 0.88);
+    background: rgba(15, 23, 42, 0.92);
     color: #ffffff;
-    padding: 6px 14px;
+    padding: 8px 16px;
     border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 500;
+    font-size: 0.8rem;
+    font-weight: 600;
     z-index: 100;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
     white-space: nowrap;
 }
 .toast-msg.show { opacity: 1; }
@@ -161,6 +161,7 @@ h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
 .mem-opt-item.is-answer { 
     background-color: #dcfce7 !important; 
     border: 1.5px solid #22c55e !important; 
+    border-left: 5px solid #16a34a !important; 
     color: #15803d !important; 
     font-weight: 700 !important; 
     opacity: 1 !important;
@@ -186,7 +187,6 @@ h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
 .fail { color: #dc2626; }
 .restart-btn { padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 0.9rem; cursor: pointer; margin-top: 8px; }
 
-/* 모의고사 설정 영역 스타일 (정렬 및 간격 통일) */
 .exam-setup-group {
     display: flex;
     flex-direction: column;
@@ -219,7 +219,7 @@ h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
     font-weight: 600;
     color: #475569;
     white-space: nowrap;
-    width: 32px; /* 라벨 너비를 고정하여 인풋 상자의 시작 위치를 완벽히 일치시킴 */
+    width: 32px;
 }
 
 .exam-setup-group select,
@@ -238,7 +238,6 @@ h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
     text-align: center;
 }
 
-/* 범위 입력 컨테이너 (필터/문항 셀렉트 박스와 동일한 폭을 차지하도록 설정) */
 .range-input-container {
     display: flex;
     align-items: center;
@@ -273,7 +272,6 @@ h1 { font-size: 1.1rem; text-align: center; color: #0f172a; flex-shrink: 0; }
     background: #1d4ed8;
 }
 
-/* 모의고사 시작 전 가이드 화면 스타일 */
 .exam-ready-screen {
     width: 100%;
     height: 100%;
