@@ -19,17 +19,6 @@
         <button class="tab-btn" id="tabExam" onclick="switchMode('exam')">📝 모의고사 모드</button>
     </div>
 
-    <!-- 암기장 모드 전용 진행률 표시 바 -->
-    <div class="progress-section" id="progressSection">
-        <div class="progress-info-text">
-            <span>📚 암기 완료: <strong id="memorizedCountText">0</strong> / <span id="totalCountText">0</span>문제</span>
-            <span id="memorizedPercentText">0%</span>
-        </div>
-        <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
-        </div>
-    </div>
-
     <div class="top-nav" id="topNav">
         <div id="navLeft" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
             <div>
@@ -44,20 +33,15 @@
         </div>
 
         <div id="examStartBox" class="exam-setup-group" style="display:none;">
-            <!-- 1행: 필터 설정 ('오답만 풀기' 추가) -->
+            <!-- 1행: 필터 설정 -->
             <div class="exam-setup-row">
                 <div class="setup-item" style="width: 100%;">
                     <span class="setup-label">필터</span>
                     <select id="examFilterSelect" class="custom-select" style="flex: 1;">
                         <option value="all" selected>전체 문제</option>
                         <option value="unmemorized">미완료 문제만</option>
-<<<<<<< HEAD
                         <option value="memorized">외운 문제만</option>
                         <option value="wrong">틀린 문제만</option>
-=======
-                        <option value="memorized">⭐ 외운 문제만</option>
-                        <option value="incorrect">❌ 오답만 풀기</option>
->>>>>>> 42f05758f4352855b2bc8466a3ec0642b6f4a956
                     </select>
                 </div>
             </div>
@@ -148,7 +132,6 @@
     </div>
 </div>
 
-<script src="./script.js?v=2"></script>
-
+<script src="./script.js"></script>
 </body>
 </html>

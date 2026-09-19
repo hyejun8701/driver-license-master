@@ -11,15 +11,10 @@ let hideMemorized = true;
 
 // 로컬스토리지 연동
 let memorizedSet = new Set(JSON.parse(localStorage.getItem('memorized_questions') || '[]'));
-<<<<<<< HEAD
 let wrongSet = new Set(JSON.parse(localStorage.getItem('wrong_questions') || '[]'));
 
 // 연속 정답/오답 카운트 트래킹 객체 { question_id: count } (양수: 연속 정답 수, 음수: 연속 오답 수)
 let streakMap = JSON.parse(localStorage.getItem('streak_map') || '{}');
-=======
-// 오답 노트: 문제 ID별 맞힌 횟수 저장 객체 (3번 이상 맞혀야 완전 탈출)
-let incorrectCounts = JSON.parse(localStorage.getItem('incorrect_counts') || '{}');
->>>>>>> 42f05758f4352855b2bc8466a3ec0642b6f4a956
 
 let userAnswers = {}; 
 let timerInterval = null;
@@ -236,11 +231,7 @@ function initQuiz(data) {
     }
 
     updateActiveDb();
-<<<<<<< HEAD
     updateExamFilterCounts();
-=======
-    updateProgressBar();
->>>>>>> 42f05758f4352855b2bc8466a3ec0642b6f4a956
     switchMode(currentMode); 
     showSwipeGuide();
 }
@@ -253,7 +244,6 @@ function updateActiveDb() {
     }
 }
 
-<<<<<<< HEAD
 function updateExamFilterCounts() {
     if (!db.length) return;
 
@@ -277,17 +267,6 @@ function updateExamFilterCounts() {
         selectEl.options[2].text = `외운 문제만 (${memorizedCount}개)`;
         selectEl.options[3].text = `틀린 문제만 (${wrongCount}개)`;
     }
-=======
-function updateProgressBar() {
-    const total = db.length;
-    const memorizedCount = memorizedSet.size;
-    const percent = total > 0 ? Math.round((memorizedCount / total) * 100) : 0;
-
-    document.getElementById('memorizedCountText').innerText = memorizedCount;
-    document.getElementById('totalCountText').innerText = total;
-    document.getElementById('memorizedPercentText').innerText = `${percent}%`;
-    document.getElementById('progressBarFill').style.width = `${percent}%`;
->>>>>>> 42f05758f4352855b2bc8466a3ec0642b6f4a956
 }
 
 function toggleHideMemorized() {
@@ -313,12 +292,8 @@ function toggleItemMemorized(isChecked) {
     }
 
     localStorage.setItem('memorized_questions', JSON.stringify(Array.from(memorizedSet)));
-<<<<<<< HEAD
     localStorage.setItem('streak_map', JSON.stringify(streakMap));
     updateExamFilterCounts();
-=======
-    updateProgressBar();
->>>>>>> 42f05758f4352855b2bc8466a3ec0642b6f4a956
 
     if (currentMode === 'memorize' && hideMemorized && isChecked) {
         updateActiveDb();
@@ -330,14 +305,15 @@ function toggleItemMemorized(isChecked) {
 function switchMode(mode) {
     if (currentMode === 'exam' && isExamStarted && mode === 'memorize') {
         const confirmLeave = confirm("⚠️ 진행 중이던 모의고사가 중단되고 초기화됩니다.\n정말 암기장으로 이동하시겠습니까?");
-        if (!confirmLeave) return; 
+        if (!confirmLeave) {
+            return; 
+        }
     }
 
     currentMode = mode;
     document.getElementById('tabMemorize').classList.toggle('active', mode === 'memorize');
     document.getElementById('tabExam').classList.toggle('active', mode === 'exam');
 
-    const progressSection = document.getElementById('progressSection');
     const navLeft = document.getElementById('navLeft');
     const examStartBox = document.getElementById('examStartBox');
     const timerBox = document.getElementById('timerBox');
@@ -351,7 +327,6 @@ function switchMode(mode) {
         clearInterval(timerInterval);
         userAnswers = {};
 
-        progressSection.style.display = 'block';
         navLeft.style.display = 'flex';
         examStartBox.style.display = 'none';
         timerBox.style.display = 'none';
@@ -365,11 +340,9 @@ function switchMode(mode) {
             document.getElementById('quizContent').style.display = 'flex';
             document.getElementById('qInput').max = db.length;
             updateActiveDb();
-            updateProgressBar();
             loadQ();
         }
     } else {
-        progressSection.style.display = 'none';
         navLeft.style.display = 'none';
         totalIdxEl.style.display = 'none'; 
         updateExamFilterCounts();
@@ -578,33 +551,17 @@ function startNewExam() {
         pool = pool.filter(item => memorizedSet.has(item._id));
     } else if (filterType === 'unmemorized') {
         pool = pool.filter(item => !memorizedSet.has(item._id));
-<<<<<<< HEAD
     } else if (filterType === 'wrong') {
         pool = pool.filter(item => wrongSet.has(item._id));
-=======
-    } else if (filterType === 'incorrect') {
-        // 오답 노트: 아직 3번 미만으로 맞혀서 오답인 문제들만 필터링
-        pool = pool.filter(item => {
-            const count = incorrectCounts[item._id] || 0;
-            return count < 3 && incorrectCounts[item._id] !== undefined;
-        });
->>>>>>> 42f05758f4352855b2bc8466a3ec0642b6f4a956
     }
 
     const selectedCount = parseInt(document.getElementById('examCountSelect').value || 40);
 
     if (pool.length < selectedCount) {
-<<<<<<< HEAD
         if (filterType === 'memorized') {
             alert(`선택한 범위 내 '외운 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)`);
         } else if (filterType === 'wrong') {
             alert(`선택한 범위 내 '틀린 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)\n모의고사를 더 진행하시면 틀린 문제가 오답노트에 자동 기록됩니다!`);
-=======
-        if (filterType === 'incorrect') {
-            alert(`선택한 범위 내 '오답 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)\n3번 완벽히 맞힐 때까지 오답에 유지됩니다!`);
-        } else if (filterType === 'memorized') {
-            alert(`선택한 범위 내 '외운 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)`);
->>>>>>> 42f05758f4352855b2bc8466a3ec0642b6f4a956
         } else {
             alert(`선택한 조건의 문제 수가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)`);
         }
@@ -687,7 +644,6 @@ function submitExam() {
     examDb.forEach((item, idx) => {
         const userAnsArr = userAnswers[idx] || [];
         const isCorrect = item.answers.length === userAnsArr.length && item.answers.every(a => userAnsArr.includes(a));
-<<<<<<< HEAD
         const qId = item._id;
 
         let curStreak = streakMap[qId] || 0;
@@ -716,35 +672,14 @@ function submitExam() {
             if (curStreak <= -3 && memorizedSet.has(qId)) {
                 memorizedSet.delete(qId);
                 autoRemovedCount++;
-=======
-        
-        if (isCorrect) {
-            correctCount++;
-            // 맞힌 경우: 오답 노트에 있던 문제라면 맞힌 횟수 1 증가 (3번 채우면 완전 삭제)
-            if (incorrectCounts[item._id] !== undefined) {
-                incorrectCounts[item._id]++;
-                if (incorrectCounts[item._id] >= 3) {
-                    delete incorrectCounts[item._id];
-                }
-            }
-        } else {
-            // 틀린 경우: 오답 노트에 없었다면 새로 추가 (0회 맞힘 상태)
-            if (incorrectCounts[item._id] === undefined) {
-                incorrectCounts[item._id] = 0;
->>>>>>> 42f05758f4352855b2bc8466a3ec0642b6f4a956
             }
         }
     });
 
-<<<<<<< HEAD
     localStorage.setItem('wrong_questions', JSON.stringify(Array.from(wrongSet)));
     localStorage.setItem('memorized_questions', JSON.stringify(Array.from(memorizedSet)));
     localStorage.setItem('streak_map', JSON.stringify(streakMap));
     updateExamFilterCounts();
-=======
-    // 변경된 오답 횟수 저장
-    localStorage.setItem('incorrect_counts', JSON.stringify(incorrectCounts));
->>>>>>> 42f05758f4352855b2bc8466a3ec0642b6f4a956
 
     const score = Math.round((correctCount / totalExamQ) * 100);
 
@@ -774,7 +709,6 @@ function submitExam() {
     }
 
     document.getElementById('resultDetail').innerText = `총 ${totalExamQ}문제 중 ${correctCount}문제를 맞히셨습니다.`;
-<<<<<<< HEAD
 
     // 자동 암기 완료/해제 토스트 알림 띄우기
     if (autoCompletedCount > 0 && autoRemovedCount > 0) {
@@ -785,6 +719,3 @@ function submitExam() {
         showToast(`⚠️ 3회 연속 오답으로 ${autoRemovedCount}개 문제가 암기 목록에서 제외되었습니다.`, 4000);
     }
 }
-=======
-}
->>>>>>> 42f05758f4352855b2bc8466a3ec0642b6f4a956
