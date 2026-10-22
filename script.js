@@ -1,3 +1,27 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAUeLJOUQODemC29esT2E3XiiwCqwaD3a0",
+  authDomain: "driver-license-master.firebaseapp.com",
+  databaseURL: "https://driver-license-master-default-rtdb.firebaseio.com",
+  projectId: "driver-license-master",
+  storageBucket: "driver-license-master.appspot.com",
+  messagingSenderId: "985665335910",
+  appId: "1:985665335910:web:11dac52cabf8c0ed30f3a7"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const firebaseDb = getDatabase(app);
+const provider = new GoogleAuthProvider();
+
+let currentUser = null;
+
+// ====================================================
+// 전역 변수
+// ====================================================
 let db = []; 
 let activeDb = []; 
 let examDb = []; 
@@ -9,12 +33,10 @@ let isExamStarted = false;
 let isAnimating = false;
 let hideMemorized = true;
 
-// 로컬스토리지 연동
-let memorizedSet = new Set(JSON.parse(localStorage.getItem('memorized_questions') || '[]'));
-let wrongSet = new Set(JSON.parse(localStorage.getItem('wrong_questions') || '[]'));
-
-// 연속 정답/오답 카운트 트래킹 객체 { question_id: count } (양수: 연속 정답 수, 음수: 연속 오답 수)
-let streakMap = JSON.parse(localStorage.getItem('streak_map') || '{}');
+let memorizedSet = new Set();
+let wrongSet = new Set();
+let bookmarkSet = new Set();
+let streakMap = {};
 
 let userAnswers = {}; 
 let timerInterval = null;
@@ -26,7 +48,152 @@ let isMouseDown = false;
 
 const cardBox = document.getElementById('cardBox');
 
+// ====================================================
+// Firebase 인증 & 화면 전환
+// ====================================================
+
+window.handleGoogleLogin = function() {
+    signInWithPopup(auth, provider)
+        .then(() => {
+            showToast("🎉 로그인 성공!");
+        })
+        .catch((error) => {
+            console.error("로그인 오류:", error);
+            alert("로그인에 실패했습니다.");
+        });
+};
+
+window.handleLogout = function() {
+    signOut(auth).then(() => {
+        showToast("로그아웃 되었습니다.");
+    });
+};
+
+// 인증 상태 감지 및 UI (화면) 전환
+onAuthStateChanged(auth, (user) => {
+    const loginScreen = document.getElementById('loginScreen');
+    const mainApp = document.getElementById('mainApp');
+    const userInfo = document.getElementById('userInfo');
+
+    if (user) {
+        currentUser = user;
+        
+        // 로그인 화면 숨기고 메인 컨텐츠 표시
+        if (loginScreen) loginScreen.style.display = 'none';
+        if (mainApp) mainApp.style.display = 'block';
+        if (userInfo) userInfo.innerText = `👤 ${user.displayName || '사용자'}님`;
+
+        loadUserDataFromCloud(user.uid);
+    } else {
+        currentUser = null;
+
+        // 로그아웃 시 전면 로그인 화면 표시 (flex로 설정)
+        if (loginScreen) loginScreen.style.display = 'flex';
+        if (mainApp) mainApp.style.display = 'none';
+        if (userInfo) userInfo.innerText = '';
+    }
+});
+
+function saveUserData() {
+    if (!currentUser) return;
+
+    const dataToSave = {
+        memorized_questions: Array.from(memorizedSet),
+        wrong_questions: Array.from(wrongSet),
+        bookmarked_questions: Array.from(bookmarkSet),
+        streak_map: streakMap,
+        updatedAt: new Date().toISOString()
+    };
+
+    localStorage.setItem('memorized_questions', JSON.stringify(dataToSave.memorized_questions));
+    localStorage.setItem('wrong_questions', JSON.stringify(dataToSave.wrong_questions));
+    localStorage.setItem('bookmarked_questions', JSON.stringify(dataToSave.bookmarked_questions));
+    localStorage.setItem('streak_map', JSON.stringify(dataToSave.streak_map));
+
+    const userRef = ref(firebaseDb, 'users/' + currentUser.uid);
+    set(userRef, dataToSave).catch(err => console.error("Firebase 저장 오류:", err));
+}
+
+function loadUserDataFromCloud(uid) {
+    const userRef = ref(firebaseDb, 'users/' + uid);
+    get(userRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            
+            memorizedSet = new Set(data.memorized_questions || []);
+            wrongSet = new Set(data.wrong_questions || []);
+            bookmarkSet = new Set(data.bookmarked_questions || []);
+            streakMap = data.streak_map || {};
+
+            // (선택) 오프라인 대비용 캐싱
+            localStorage.setItem('memorized_questions', JSON.stringify(Array.from(memorizedSet)));
+            localStorage.setItem('wrong_questions', JSON.stringify(Array.from(wrongSet)));
+            localStorage.setItem('bookmarked_questions', JSON.stringify(Array.from(bookmarkSet)));
+            localStorage.setItem('streak_map', JSON.stringify(streakMap));
+        } else {
+            saveUserData();
+        }
+        
+        // [핵심] 파이어베이스 데이터가 세팅된 '진짜 최종 시점'에 활성 DB를 다시 계산하고 렌더링
+        updateActiveDb();
+        updateExamFilterCounts();
+
+        const loadingEl = document.getElementById('loading');
+        const quizContentEl = document.getElementById('quizContent');
+        if (loadingEl) loadingEl.style.display = 'none';
+        
+        if (currentMode === 'memorize' && quizContentEl) {
+            quizContentEl.style.display = 'flex';
+            loadQ(); // 이때 처음으로 올바른 문제가 렌더링됨 (1번 깜빡임 원천 차단)
+        }
+    }).catch(err => {
+        console.error("Firebase 불러오기 오류:", err);
+        updateActiveDb();
+        
+        const loadingEl = document.getElementById('loading');
+        const quizContentEl = document.getElementById('quizContent');
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (currentMode === 'memorize' && quizContentEl) {
+            quizContentEl.style.display = 'flex';
+            loadQ();
+        }
+    });
+}
+
+// ====================================================
+// 주요 기능 및 이벤트 바인딩
+// ====================================================
+
+const fontSizes = ['font-small', 'font-medium', 'font-large', 'font-xlarge'];
+let currentFontIdx = 1; // 기본 medium
+
+window.adjustFontSize = function(direction) {
+    currentFontIdx += direction;
+    
+    if (currentFontIdx < 0) currentFontIdx = 0;
+    if (currentFontIdx >= fontSizes.length) currentFontIdx = fontSizes.length - 1;
+
+    applyFontSize();
+};
+
+function applyFontSize() {
+    const cardBoxEl = document.getElementById('cardBox');
+    if (!cardBoxEl) return;
+    
+    // 카드 영역에서 기존 폰트 클래스 제거 후 새로운 크기 적용
+    fontSizes.forEach(cls => cardBoxEl.classList.remove(cls));
+    cardBoxEl.classList.add(fontSizes[currentFontIdx]);
+
+    localStorage.setItem('font_size_idx', currentFontIdx);
+}
+
 window.addEventListener('DOMContentLoaded', () => {
+    const savedFontIdx = localStorage.getItem('font_size_idx');
+    if (savedFontIdx !== null) {
+        currentFontIdx = parseInt(savedFontIdx);
+        applyFontSize();
+    }
+
     loadJsonData();
 
     ['qInput', 'rangeStart', 'rangeEnd'].forEach(id => {
@@ -37,7 +204,7 @@ window.addEventListener('DOMContentLoaded', () => {
             el.addEventListener('keydown', e => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    if (id === 'qInput') jumpToQ();
+                    if (id === 'qInput') window.jumpToQ();
                 }
             });
 
@@ -73,13 +240,14 @@ function loadJsonData() {
         })
         .catch(error => {
             console.error('JSON 파일 로드 실패:', error);
-            document.getElementById('loading').innerHTML = `
-                <div style="font-weight: bold; color: #ef4444; line-height: 1.4; font-size: 0.85rem;">
-                    ⚠️ questions_full.json 데이터를 불러오지 못했습니다.<br>수동으로 선택해 주세요.
-                </div>
-                <button class="file-select-btn" onclick="triggerFileInput()">📁 파일 선택</button>
-                <input type="file" id="jsonFileInput" accept=".json" onchange="handleFileUpload(event)" style="display: none;">
-            `;
+            const loadingEl = document.getElementById('loading');
+            if (loadingEl) {
+                loadingEl.innerHTML = `
+                    <div style="font-weight: bold; color: #ef4444; line-height: 1.4; font-size: 0.85rem;">
+                        ⚠️ questions_full.json 데이터를 불러오지 못했습니다.
+                    </div>
+                `;
+            }
         });
 }
 
@@ -133,19 +301,21 @@ document.addEventListener('keydown', e => {
 
 function showToast(msg, duration = 3000) {
     const toast = document.getElementById('toastMsg');
+    if (!toast) return;
     toast.innerText = msg;
     toast.classList.add('show');
     setTimeout(() => {
         toast.classList.remove('show');
     }, duration);
 }
+window.showToast = showToast;
 
-function showSwipeGuide(force = false) {
+window.showSwipeGuide = function(force = false) {
     if (force || !localStorage.getItem('swipe_guide_shown')) {
         showToast('👈 좌우로 스와이프 또는 방향키(←/→)로 넘기세요');
         localStorage.setItem('swipe_guide_shown', 'true');
     }
-}
+};
 
 function handleSwipe() {
     const isResultVisible = document.getElementById('resultContent').style.display !== 'none';
@@ -163,19 +333,37 @@ function handleSwipe() {
 
 function swipeTo(dir) {
     const list = getCurList();
-    const curIdx = getCurIdx();
+    let curIdx = getCurIdx();
 
-    if (dir === 'next' && curIdx >= list.length - 1) {
-        if (currentMode === 'exam') {
-            submitExam();
+    if (dir === 'next') {
+        if (curIdx >= list.length - 1) {
+            if (currentMode === 'exam') {
+                window.submitExam();
+                return;
+            } else {
+                // 암기장 모드 끝 -> 처음으로 순환
+                //showToast("🔄 첫 번째 문제로 돌아갑니다.");
+                curIdx = 0;
+            }
         } else {
-            alert('마지막 문제입니다.');
+            curIdx++;
         }
-        return;
+    } else if (dir === 'prev') {
+        if (curIdx <= 0) {
+            if (currentMode === 'memorize') {
+                // 암기장 모드 처음 -> 마지막으로 순환
+                //showToast("🔄 마지막 문제로 이동합니다.");
+                curIdx = list.length - 1;
+            } else {
+                return;
+            }
+        } else {
+            curIdx--;
+        }
     }
-    if (dir === 'prev' && curIdx <= 0) return;
 
     isAnimating = true;
+    setCurIdx(curIdx);
 
     const outClass = dir === 'next' ? 'slide-out-left' : 'slide-out-right';
     const inClass = dir === 'next' ? 'slide-in-from-right' : 'slide-in-from-left';
@@ -183,8 +371,6 @@ function swipeTo(dir) {
     cardBox.classList.add(outClass);
 
     setTimeout(() => {
-        if (dir === 'next') setCurIdx(curIdx + 1);
-        else setCurIdx(curIdx - 1);
         loadQ();
 
         cardBox.style.transition = 'none';
@@ -200,30 +386,8 @@ function swipeTo(dir) {
     }, 200);
 }
 
-function triggerFileInput() {
-    const input = document.getElementById('jsonFileInput');
-    if (input) input.click();
-}
-
-function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const data = JSON.parse(e.target.result);
-            initQuiz(data);
-        } catch (err) {
-            alert("올바른 JSON 파일이 아닙니다.");
-        }
-    };
-    reader.readAsText(file);
-}
-
 function initQuiz(data) {
     db = data.map((item, idx) => ({ ...item, _id: item.id || idx + 1 }));
-    document.getElementById('loading').style.display = 'none';
 
     if (db.length) {
         document.getElementById('rangeStart').value = 1;
@@ -232,8 +396,9 @@ function initQuiz(data) {
 
     updateActiveDb();
     updateExamFilterCounts();
-    switchMode(currentMode); 
-    showSwipeGuide();
+    
+    // [수정] 여기서는 곧바로 loadQ()를 부르지 않고, 
+    // 파이어베이스 데이터 로딩(loadUserDataFromCloud)이 끝난 후에 그리도록 유도합니다.
 }
 
 function updateActiveDb() {
@@ -241,6 +406,21 @@ function updateActiveDb() {
         activeDb = db.filter(item => !memorizedSet.has(item._id));
     } else {
         activeDb = [...db];
+    }
+
+    // [핵심 수정] 외운 문제 제외 모드일 때, 전체 db 기준 첫 번째 미완료 문제를 찾아 memorizeIdx를 곧바로 맞춤
+    if (hideMemorized && db.length > 0) {
+        const firstUnmemorized = db.find(item => !memorizedSet.has(item._id));
+        if (firstUnmemorized) {
+            const foundIdx = activeDb.findIndex(item => item._id === firstUnmemorized._id);
+            if (foundIdx !== -1) {
+                memorizeIdx = foundIdx;
+            }
+        } else {
+            memorizeIdx = 0;
+        }
+    } else {
+        memorizeIdx = 0;
     }
 }
 
@@ -259,6 +439,7 @@ function updateExamFilterCounts() {
     const memorizedCount = rangePool.filter(item => memorizedSet.has(item._id)).length;
     const unmemorizedCount = totalCount - memorizedCount;
     const wrongCount = rangePool.filter(item => wrongSet.has(item._id)).length;
+    const bookmarkCount = rangePool.filter(item => bookmarkSet.has(item._id)).length; // [추가]
 
     const selectEl = document.getElementById('examFilterSelect');
     if (selectEl) {
@@ -266,17 +447,17 @@ function updateExamFilterCounts() {
         selectEl.options[1].text = `미완료 문제만 (${unmemorizedCount}개)`;
         selectEl.options[2].text = `외운 문제만 (${memorizedCount}개)`;
         selectEl.options[3].text = `틀린 문제만 (${wrongCount}개)`;
+        selectEl.options[4].text = `북마크 문제만 (${bookmarkCount}개)`; // [추가]
     }
 }
 
-function toggleHideMemorized() {
+window.toggleHideMemorized = function() {
     hideMemorized = document.getElementById('hideMemorizedCheck').checked;
-    updateActiveDb();
-    memorizeIdx = 0;
-    loadQ();
-}
+    updateActiveDb(); // 내부에서 자동으로 올바른 인덱스를 계산함
+    loadQ();          // 1번을 거치지 않고 곧바로 알맞은 문제부터 렌더링
+};
 
-function toggleItemMemorized(isChecked) {
+window.toggleItemMemorized = function(isChecked) {
     const list = getCurList();
     if (!list.length) return;
 
@@ -285,14 +466,13 @@ function toggleItemMemorized(isChecked) {
 
     if (isChecked) {
         memorizedSet.add(currentItem._id);
-        streakMap[currentItem._id] = 0; // 수동 변경 시 연속 카운트 초기화
+        streakMap[currentItem._id] = 0; 
     } else {
         memorizedSet.delete(currentItem._id);
         streakMap[currentItem._id] = 0;
     }
 
-    localStorage.setItem('memorized_questions', JSON.stringify(Array.from(memorizedSet)));
-    localStorage.setItem('streak_map', JSON.stringify(streakMap));
+    saveUserData();
     updateExamFilterCounts();
 
     if (currentMode === 'memorize' && hideMemorized && isChecked) {
@@ -300,14 +480,29 @@ function toggleItemMemorized(isChecked) {
         if (memorizeIdx >= activeDb.length) memorizeIdx = Math.max(0, activeDb.length - 1);
         loadQ();
     }
-}
+};
 
-function switchMode(mode) {
+window.toggleItemBookmark = function(isChecked) {
+    const list = getCurList();
+    if (!list.length) return;
+
+    const currentItem = list[getCurIdx()];
+    if (!currentItem) return;
+
+    if (isChecked) {
+        bookmarkSet.add(currentItem._id);
+    } else {
+        bookmarkSet.delete(currentItem._id);
+    }
+
+    saveUserData();
+    updateExamFilterCounts();
+};
+
+window.switchMode = function(mode) {
     if (currentMode === 'exam' && isExamStarted && mode === 'memorize') {
         const confirmLeave = confirm("⚠️ 진행 중이던 모의고사가 중단되고 초기화됩니다.\n정말 암기장으로 이동하시겠습니까?");
-        if (!confirmLeave) {
-            return; 
-        }
+        if (!confirmLeave) return; 
     }
 
     currentMode = mode;
@@ -346,9 +541,9 @@ function switchMode(mode) {
         navLeft.style.display = 'none';
         totalIdxEl.style.display = 'none'; 
         updateExamFilterCounts();
-        resetExamSetup();
+        window.resetExamSetup();
     }
-}
+};
 
 function getCurIdx() {
     return currentMode === 'memorize' ? memorizeIdx : examIdx;
@@ -407,6 +602,7 @@ function loadQ() {
 
     document.getElementById('qCategory').innerText = item.category || '문제';
     document.getElementById('itemMemorizedCheck').checked = memorizedSet.has(item._id);
+    document.getElementById('itemBookmarkCheck').checked = bookmarkSet.has(item._id);
     document.getElementById('qText').innerHTML = highlightKeywords(item.question);
 
     const imgUrl = item.image_url || item.image || item.img || null;
@@ -514,7 +710,7 @@ function selectOption(selectedNum) {
     loadQ();
 }
 
-function jumpToQ() {
+window.jumpToQ = function() {
     const targetId = parseInt(document.getElementById('qInput').value);
     const list = getCurList();
 
@@ -531,9 +727,9 @@ function jumpToQ() {
             alert(`1부터 ${db.length} 사이의 올바른 문제 번호를 입력해주세요.`);
         }
     }
-}
+};
 
-function startNewExam() {
+window.startNewExam = function() {
     if (!db.length) return;
 
     const filterType = document.getElementById('examFilterSelect').value;
@@ -551,6 +747,8 @@ function startNewExam() {
         pool = pool.filter(item => memorizedSet.has(item._id));
     } else if (filterType === 'unmemorized') {
         pool = pool.filter(item => !memorizedSet.has(item._id));
+    } else if (filterType === 'bookmarked') {
+        pool = pool.filter(item => bookmarkSet.has(item._id));
     } else if (filterType === 'wrong') {
         pool = pool.filter(item => wrongSet.has(item._id));
     }
@@ -560,6 +758,8 @@ function startNewExam() {
     if (pool.length < selectedCount) {
         if (filterType === 'memorized') {
             alert(`선택한 범위 내 '외운 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)`);
+        } else if (filterType === 'bookmarked') {
+            alert(`선택한 범위 내 '북마크된 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)`);
         } else if (filterType === 'wrong') {
             alert(`선택한 범위 내 '틀린 문제'가 부족합니다. (현재 ${pool.length}개 / 필요 ${selectedCount}개)\n모의고사를 더 진행하시면 틀린 문제가 오답노트에 자동 기록됩니다!`);
         } else {
@@ -588,7 +788,7 @@ function startNewExam() {
 
     startTimer();
     loadQ();
-}
+};
 
 function resetExamSetup() {
     isExamStarted = false;
@@ -607,6 +807,7 @@ function resetExamSetup() {
 
     updateExamFilterCounts();
 }
+window.resetExamSetup = resetExamSetup;
 
 function startTimer() {
     clearInterval(timerInterval);
@@ -614,7 +815,7 @@ function startTimer() {
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
             alert("시험 시간이 종료되었습니다.");
-            submitExam();
+            window.submitExam();
         } else {
             timeLeft--;
             updateTimerDisplay();
@@ -628,7 +829,7 @@ function updateTimerDisplay() {
     document.getElementById('timerBox').innerText = `⏱️ ${m}:${s}`;
 }
 
-function submitExam() {
+window.submitExam = function() {
     const totalExamQ = examDb.length;
     if (Object.keys(userAnswers).length < totalExamQ) {
         if (!confirm(`아직 안 푼 문제가 있습니다. 정말 제출하시겠습니까?`)) return;
@@ -652,11 +853,9 @@ function submitExam() {
             correctCount++;
             wrongSet.delete(qId);
 
-            // 연속 정답 카운트 누적
             curStreak = curStreak > 0 ? curStreak + 1 : 1;
             streakMap[qId] = curStreak;
 
-            // 3회 이상 연속 정답 시 자동 암기 완료 처리
             if (curStreak >= 3 && !memorizedSet.has(qId)) {
                 memorizedSet.add(qId);
                 autoCompletedCount++;
@@ -664,11 +863,9 @@ function submitExam() {
         } else {
             wrongSet.add(qId);
 
-            // 연속 오답 카운트 누적 (음수)
             curStreak = curStreak < 0 ? curStreak - 1 : -1;
             streakMap[qId] = curStreak;
 
-            // 3회 이상 연속 오답 시 자동 암기 해제 처리
             if (curStreak <= -3 && memorizedSet.has(qId)) {
                 memorizedSet.delete(qId);
                 autoRemovedCount++;
@@ -676,9 +873,7 @@ function submitExam() {
         }
     });
 
-    localStorage.setItem('wrong_questions', JSON.stringify(Array.from(wrongSet)));
-    localStorage.setItem('memorized_questions', JSON.stringify(Array.from(memorizedSet)));
-    localStorage.setItem('streak_map', JSON.stringify(streakMap));
+    saveUserData();
     updateExamFilterCounts();
 
     const score = Math.round((correctCount / totalExamQ) * 100);
@@ -710,7 +905,6 @@ function submitExam() {
 
     document.getElementById('resultDetail').innerText = `총 ${totalExamQ}문제 중 ${correctCount}문제를 맞히셨습니다.`;
 
-    // 자동 암기 완료/해제 토스트 알림 띄우기
     if (autoCompletedCount > 0 && autoRemovedCount > 0) {
         showToast(`🎉 ${autoCompletedCount}개 문제 자동 암기 완료! / ⚠️ ${autoRemovedCount}개 문제 암기 해제`, 4000);
     } else if (autoCompletedCount > 0) {
@@ -718,4 +912,4 @@ function submitExam() {
     } else if (autoRemovedCount > 0) {
         showToast(`⚠️ 3회 연속 오답으로 ${autoRemovedCount}개 문제가 암기 목록에서 제외되었습니다.`, 4000);
     }
-}
+};
