@@ -116,25 +116,37 @@ function saveUserData() {
 
 function loadUserDataFromCloud(uid) {
     const userRef = ref(firebaseDb, 'users/' + uid);
+    
+    // [핵심] 기기에 이미 남아있던 로컬 데이터 먼저 가져오기
+    const localMemorized = JSON.parse(localStorage.getItem('memorized_questions') || '[]');
+    const localWrong = JSON.parse(localStorage.getItem('wrong_questions') || '[]');
+    const localBookmark = JSON.parse(localStorage.getItem('bookmarked_questions') || '[]');
+    const localStreak = JSON.parse(localStorage.getItem('streak_map') || '{}');
+
     get(userRef).then((snapshot) => {
         if (snapshot.exists()) {
             const data = snapshot.val();
             
-            memorizedSet = new Set(data.memorized_questions || []);
-            wrongSet = new Set(data.wrong_questions || []);
-            bookmarkSet = new Set(data.bookmarked_questions || []);
-            streakMap = data.streak_map || {};
+            // [핵심] 클라우드 데이터와 로컬 데이터를 합치기 (중복 제거)
+            memorizedSet = new Set([...localMemorized, ...(data.memorized_questions || [])]);
+            wrongSet = new Set([...localWrong, ...(data.wrong_questions || [])]);
+            bookmarkSet = new Set([...localBookmark, ...(data.bookmarked_questions || [])]);
+            
+            // streakMap 합치기
+            streakMap = { ...localStreak, ...(data.streak_map || {}) };
 
-            // (선택) 오프라인 대비용 캐싱
-            localStorage.setItem('memorized_questions', JSON.stringify(Array.from(memorizedSet)));
-            localStorage.setItem('wrong_questions', JSON.stringify(Array.from(wrongSet)));
-            localStorage.setItem('bookmarked_questions', JSON.stringify(Array.from(bookmarkSet)));
-            localStorage.setItem('streak_map', JSON.stringify(streakMap));
         } else {
-            saveUserData();
+            // 서버에 데이터가 아예 없다면 로컬 데이터를 그대로 사용
+            memorizedSet = new Set(localMemorized);
+            wrongSet = new Set(localWrong);
+            bookmarkSet = new Set(localBookmark);
+            streakMap = localStreak;
         }
         
-        // [핵심] 파이어베이스 데이터가 세팅된 '진짜 최종 시점'에 활성 DB를 다시 계산하고 렌더링
+        // 합쳐진 최종 데이터를 로컬과 클라우드에 다시 동기화 저장
+        saveUserData();
+
+        // UI 렌더링 진행
         updateActiveDb();
         updateExamFilterCounts();
 
@@ -144,10 +156,16 @@ function loadUserDataFromCloud(uid) {
         
         if (currentMode === 'memorize' && quizContentEl) {
             quizContentEl.style.display = 'flex';
-            loadQ(); // 이때 처음으로 올바른 문제가 렌더링됨 (1번 깜빡임 원천 차단)
+            loadQ();
         }
     }).catch(err => {
         console.error("Firebase 불러오기 오류:", err);
+        // 에러 발생 시 안전하게 로컬 데이터로 복구
+        memorizedSet = new Set(localMemorized);
+        wrongSet = new Set(localWrong);
+        bookmarkSet = new Set(localBookmark);
+        streakMap = localStreak;
+
         updateActiveDb();
         
         const loadingEl = document.getElementById('loading');
