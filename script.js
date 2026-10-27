@@ -426,19 +426,10 @@ function updateActiveDb() {
         activeDb = [...db];
     }
 
-    // [핵심 수정] 외운 문제 제외 모드일 때, 전체 db 기준 첫 번째 미완료 문제를 찾아 memorizeIdx를 곧바로 맞춤
-    if (hideMemorized && db.length > 0) {
-        const firstUnmemorized = db.find(item => !memorizedSet.has(item._id));
-        if (firstUnmemorized) {
-            const foundIdx = activeDb.findIndex(item => item._id === firstUnmemorized._id);
-            if (foundIdx !== -1) {
-                memorizeIdx = foundIdx;
-            }
-        } else {
-            memorizeIdx = 0;
-        }
-    } else {
-        memorizeIdx = 0;
+    // [수정] 강제로 첫 문제(memorizeIdx = 0)로 튕기게 만들던 이전 로직을 제거하고,
+    // 현재 보고 있던 인덱스가 줄어든 activeDb 범위를 넘어가지 않도록만 안전하게 보정합니다.
+    if (memorizeIdx >= activeDb.length) {
+        memorizeIdx = Math.max(0, activeDb.length - 1);
     }
 }
 
