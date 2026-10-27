@@ -495,7 +495,10 @@ window.toggleItemMemorized = function(isChecked) {
 
     if (currentMode === 'memorize' && hideMemorized && isChecked) {
         updateActiveDb();
-        if (memorizeIdx >= activeDb.length) memorizeIdx = Math.max(0, activeDb.length - 1);
+        // [수정] 첫 번호로 튀는 대신, 현재 인덱스가 리스트 범위를 벗어나지 않도록 안전하게 유지하거나 다음 문제로 연결
+        if (memorizeIdx >= activeDb.length) {
+            memorizeIdx = Math.max(0, activeDb.length - 1);
+        }
         loadQ();
     }
 };
