@@ -420,16 +420,28 @@ function initQuiz(data) {
 }
 
 function updateActiveDb() {
+    const currentItemId = activeDb[memorizeIdx]?._id;
+
     if (hideMemorized) {
         activeDb = db.filter(item => !memorizedSet.has(item._id));
     } else {
         activeDb = [...db];
     }
 
-    // [수정] 강제로 첫 문제(memorizeIdx = 0)로 튕기게 만들던 이전 로직을 제거하고,
-    // 현재 보고 있던 인덱스가 줄어든 activeDb 범위를 넘어가지 않도록만 안전하게 보정합니다.
-    if (memorizeIdx >= activeDb.length) {
-        memorizeIdx = Math.max(0, activeDb.length - 1);
+    // 만약 이전 카드 ID가 여전히 새 리스트에 있다면 그 위치를 유지, 없으면 인덱스 범위 초과 방지
+    if (currentItemId !== undefined) {
+        const foundIdx = activeDb.findIndex(item => item._id === currentItemId);
+        if (foundIdx !== -1) {
+            memorizeIdx = foundIdx;
+        } else {
+            if (memorizeIdx >= activeDb.length) {
+                memorizeIdx = Math.max(0, activeDb.length - 1);
+            }
+        }
+    } else {
+        if (memorizeIdx >= activeDb.length) {
+            memorizeIdx = Math.max(0, activeDb.length - 1);
+        }
     }
 }
 
@@ -486,7 +498,7 @@ window.toggleItemMemorized = function(isChecked) {
 
     if (currentMode === 'memorize' && hideMemorized && isChecked) {
         updateActiveDb();
-        // [수정] 첫 번호로 튀는 대신, 현재 인덱스가 리스트 범위를 벗어나지 않도록 안전하게 유지하거나 다음 문제로 연결
+        // 외운 문제가 빠져나가면서 현재 인덱스가 리스트 끝을 넘어가면 마지막으로 맞춤
         if (memorizeIdx >= activeDb.length) {
             memorizeIdx = Math.max(0, activeDb.length - 1);
         }
